@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<serverClusters>
+	<cluster id="aaron">	    
+	    <ipAddress>10.9.139.164</ipAddress>
+	    <server id="zero">
+	        <port>8080</port>
+	    </server>
+	    <server id="one">
+	        <port>8081</port>
+	    </server>
+	    <server id="two">
+	        <port>8082</port>
+	    </server>	                
+	</cluster>
+	<cluster id="arefin">	    
+	    <ipAddress>192.168.0.6</ipAddress>	    
+	    <server id="zero">
+	        <port>8080</port>
+	    </server>
+	    <server id="one">
+	        <port>8081</port>
+	    </server>
+	    <server id="two">
+	        <port>8082</port>
+	    </server>	                
+	</cluster>
+	<cluster id="grader">	    
+	    <ipAddress>127.0.0.1</ipAddress>	    
+	    <server id="zero">
+	        <port>8080</port>
+	    </server>
+	    <server id="one">
+	        <port>8081</port>
+	    </server>
+	    <server id="two">
+	        <port>8082</port>
+	    </server>	                
+	</cluster>
+</serverClusters>
