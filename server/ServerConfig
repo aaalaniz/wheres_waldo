@@ -1,0 +1,24 @@
+NumServers:4
+Server{
+ServerAddress: 127.0.0.1
+ServerName: localhost
+SSTCPPort: 35001
+CSTCPPort: 45001
+}
+Server{
+ServerAddress: 127.0.0.1
+ServerName: localhost
+SSTCPPort: 35002
+CSTCPPort: 45002
+}
+Server{
+ServerAddress: 127.0.0.1
+ServerName: localhost
+SSTCPPort:: 35003
+CSTCPPort:: 45003
+}
+Server{
+ServerAddress: 127.0.0.1
+SSTCPPort:: 35004
+CSTCPPort:: 45004
+}
