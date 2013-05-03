@@ -25,7 +25,7 @@ class Server{
 	//Parse Config File	
 	//Init Config object
 	private void processConfigFile(String inFname){
-		Config cfg = Config.getConfig();
+		ServersConfig cfg = ServersConfig.getConfig();
         try
         {
             BufferedReader fin = new BufferedReader(new FileReader(inFname));
