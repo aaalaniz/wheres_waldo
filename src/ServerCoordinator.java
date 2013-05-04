@@ -1,7 +1,4 @@
 import javax.imageio.ImageIO;  
-
-import temp.ServerServerComm;
-
 import java.awt.image.BufferedImage;  
 import java.io.*; 
 import java.net.ServerSocket;
@@ -14,6 +11,8 @@ public class ServerCoordinator {
 	String mLocalImgPath;
 	int mImgWd, mImgHt, mTmpWd, mTmpHt, mVStride, mHStride, mVSections, mHSections,mNumJobItemsRem, 
 		mWorkersAvailable,mCurrentJobIdx;
+	ServerImageTemplate mSit;
+	ImageSenderThread mImgS;
 	static Thread mThImageSender, mThScheduler;
 	static ServerCommTX mSCT;
 	ArrayList<JobItem> mJIList; // List to track status of job-items
@@ -32,22 +31,37 @@ public class ServerCoordinator {
 	
 	//Constructor	
 	//Instantiated on the server start
-	public ServerCoordinator(ServerCommTX inSCT){
+	public ServerCoordinator(ServerCommTX inSCT, ServerImageTemplate inSit){
 		mSCT = inSCT;
+		mSit = inSit;
 		mSC = ServersConfig.getConfig();
 		mWorkersAvailable = 0;
 		mNumJobItemsRem = 0;
 		mLocalImgPath = "";
 				
-		mThImageSender = new Thread(new ImageSender(mLocalImgPath));
+		mImgS = new ImageSenderThread();
+		mThImageSender = new Thread(mImgS);
 		mThScheduler = new Thread(new JobScheduler(this));
+						
+		threadMessage("Server Coordinator instantiated");
 	}
+	
+    static void threadMessage(String message)
+    {
+        String threadName =
+            Thread.currentThread().getName();
+        System.out.format("%s: %s%n",
+                          threadName,
+                          message);
+    }
 	
 	//ProcessJob
 	//Called by ServerClientComm on receiving a request from the client
 	public synchronized void ProcessJob(String inFilePath){
 		
 		mLocalImgPath = inFilePath;
+		
+		threadMessage("ServerCoordinator Process Job: " +mLocalImgPath);
 		
 		//Determine dimension of the image	
 		File file = new File(mLocalImgPath); 
@@ -65,9 +79,12 @@ public class ServerCoordinator {
 		}
 		
 		//Determine how many sub-sections of image we need to process
-		//This is equal to number of job items		
-		mHSections = (mImgWd/mHStride) - (mTmpWd/mHStride + 1);
-		mVSections = (mImgHt/mVStride) - (mTmpHt/mVStride + 1);
+		//This is equal to number of job items	
+		//\todo should be set at run time from image dimensions
+		mHStride = 10;
+		mVStride = 10;
+		mHSections = (mImgWd/mHStride) - (mSit.getTmpWd()/mHStride + 1);
+		mVSections = (mImgHt/mVStride) - (mSit.getTmpHt()/mVStride + 1);
 				
 		//Create job queue data structure			
 		mJIList = new ArrayList<JobItem>();
@@ -95,7 +112,9 @@ public class ServerCoordinator {
 			}
 		}
 			
+		
 		//Run Image sender thread
+		mImgS.setFilePath(mLocalImgPath);
 		mThImageSender.start();
 						
 		//Run scheduler thread
@@ -175,16 +194,26 @@ public class ServerCoordinator {
 	public synchronized int getNumJobItemsRem(){
 		return mNumJobItemsRem;		
 	}
-			
+	
+	private static class ImageSender{
+		String mFilePath;
+		
+		public ImageSender(){}
+		
+        public void setFilePath(String inFilePath){
+        	mFilePath = inFilePath;
+        }
+		
+	}
+	
 	//Image sender thread
 	//Separate thread so that jobs on some worker threads can get started before
 	//images are transferred to all the workers
-    private static class ImageSender implements Runnable
+    private static class ImageSenderThread extends ImageSender implements Runnable
     {
-    	String mFilePath;
-    	public ImageSender(String inFilePath)
-        {
-    		mFilePath = inFilePath;
+    	
+    	public ImageSenderThread()
+        {    		
         }
     	
         public void run()
@@ -197,6 +226,8 @@ public class ServerCoordinator {
         		}
         	}
         }
+        
+
     }
 	
 						

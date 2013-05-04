@@ -1,4 +1,4 @@
-import temp.ServerServerComm;
+
 
 
 public class ServerWorker {
@@ -12,7 +12,17 @@ public class ServerWorker {
 	//Constructor
 	public ServerWorker(ServerCommTX inSST){
 		mSST = inSST;
+		threadMessage("ServerWorker instantiated");
 	}
+	
+    static void threadMessage(String message)
+    {
+        String threadName =
+            Thread.currentThread().getName();
+        System.out.format("%s: %s%n",
+                          threadName,
+                          message);
+    }
 	
 	//Initialize new job
 	//Called by SSC.processMsg when "job_init" message is received
@@ -22,6 +32,8 @@ public class ServerWorker {
 		mYCoord = 0;
 		mJobItemID = 0;
 		mFilePath = "";
+		
+		threadMessage("ServerWorker JobInit");
 	}
 	
 	//Image received
@@ -30,6 +42,7 @@ public class ServerWorker {
 	//which will tell the coordinator that it's ready
 	public void ImageReceived(String inFilePath){
 		mFilePath = inFilePath;
+		threadMessage("ServerWorker ImageReceived " + inFilePath);
 		mSST.sendMsg(mcoordID, "image_received_ack","");
 	}
 	
@@ -41,6 +54,8 @@ public class ServerWorker {
 		mXCoord = inXCoord;
 		mYCoord = inYCoord; 
 		
+		threadMessage("ServerWorker StartJob. JobItemID:" + mJobItemID +"X: " + mXCoord + "Y: "  +mYCoord);
+		
 		//\todo call image processing code here
 	}
 	
@@ -50,6 +65,7 @@ public class ServerWorker {
 	public void Done(int inJobItemID, int inFeatMatched){
 		//Send a message back to coordinator with number of features matched
 		String msg = inJobItemID + " " + inFeatMatched;
+		threadMessage("ServerWorker JobDone. JobItemID:" + mJobItemID + "FeaturesMatched: " + inFeatMatched);
 		mSST.sendMsg(mcoordID, "job_done", msg);		
 	}
 		

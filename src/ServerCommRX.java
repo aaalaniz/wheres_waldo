@@ -31,13 +31,26 @@ public class ServerCommRX {
 		mSCoord = inCoord;
 	      		
 		//Create listener threads on each channel
-		mListenerThreads = new Thread[mN];
-		for(int n=0;n<mSC.mNumServers;n++){
-			mListenerThreads[n] = new Thread(new ListenerThread(n));
-			mListenerThreads[n].run();
+		mListenerThreads = new Thread[mN]; //Although we have an extra thread object, we don't run the thread at index == mId 
+		for(int n=0;n<mN-1;n++){
+			if(n!=mId){
+				mListenerThreads[n] = new Thread(new ListenerThread(n));
+				mListenerThreads[n].run();
+			}
 		}
 		
+		threadMessage("ServerCommRX created mID: "+ mId);
+		
 	}
+	
+    static void threadMessage(String message)
+    {
+        String threadName =
+            Thread.currentThread().getName();
+        System.out.format("%s: %s%n",
+                          threadName,
+                          message);
+    }
 	
     //Receive Msg
     public ServerMsg receiveMsg(int fromId) throws IOException  {
@@ -45,8 +58,10 @@ public class ServerCommRX {
         StringTokenizer st = new StringTokenizer(getline);
         int srcId = Integer.parseInt(st.nextToken());
         int destId = Integer.parseInt(st.nextToken());
-        String tag = st.nextToken();
-        String msg = st.nextToken("#");
+        String tag = st.nextToken("#");
+        String msg = st.nextToken();
+        
+        threadMessage("ServerCommRX received message " + srcId + " " + destId + " " + tag + " " + msg);
         return new ServerMsg(srcId, destId, tag, msg);
     }
     
@@ -54,6 +69,8 @@ public class ServerCommRX {
     public void receiveFile(int inSrcID, String inName){
 
     	mWorkerFullFilePath =  mWorkerBaseFilePath + inName;
+    	
+    	 threadMessage("ServerCommRX receiving file srcID: " + inSrcID + " Name:  " +  inName);
     	
     	byte[] filebuffer = new byte[65536];
         try {           
@@ -72,6 +89,7 @@ public class ServerCommRX {
     //Process Msg
     public void processMsg(ServerMsg m){
     	String tag = m.getTag();
+    	tag = tag.trim();
     	
     	//Messages received as worker
     	if(tag.equals("job_init")){
@@ -125,6 +143,7 @@ public class ServerCommRX {
             this.channel = channel;           
         }
         public void run() {
+        	threadMessage("ServerCommRX starting listener thread channel: "+ channel);
             while (true) {
                 try {
                     ServerMsg m = receiveMsg(channel);

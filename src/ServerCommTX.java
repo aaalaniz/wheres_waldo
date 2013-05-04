@@ -17,13 +17,24 @@ public class ServerCommTX {
     public ServerCommTX(PrintWriter[] inDataOut,OutputStream[] inSocketOut,
     						 int inID){
     	mSocketOut = inSocketOut;
-    	inDataOut = mDataOut;
+    	mDataOut = inDataOut;
     	mID = inID;
+    	
+    	threadMessage("ServerCommTX created mID: "+ mID);
     }
     
+    static void threadMessage(String message)
+    {
+        String threadName =
+            Thread.currentThread().getName();
+        System.out.format("%s: %s%n",
+                          threadName,
+                          message);
+    }
 	
 	//Send Msg
-    public void sendMsg(int destId, String tag, String msg) {       
+    public void sendMsg(int destId, String tag, String msg) {    
+    	threadMessage("ServerCommTX sending message to destID: " + destId + " tag:" + tag + " msg: " + msg);
     	mDataOut[destId].println(mID + " " + destId + " " + tag + " " + msg + "#");
     	mDataOut[destId].flush();
     }
@@ -31,6 +42,8 @@ public class ServerCommTX {
     //Send File
     public void sendFile(int inDestID, String inFilePath){
     	byte[] filebuffer = new byte[65536];
+    	
+    	threadMessage("ServerCommTX sending file to destID: " + inDestID + " LocalFilePath: " + inFilePath);
     	
     	//Send file__transfer_start msg to the destination server
     	mDataOut[inDestID].println(mID + " " + inDestID + " " + "file_transfer_start" + "#" + inFilePath);
@@ -66,6 +79,8 @@ public class ServerCommTX {
     	//Send file_transfer_done message
     	mDataOut[inDestID].println(mID + " " + inDestID + " " + "file_transfer_done" + "#" + " ");
     	mDataOut[inDestID].flush();
+    	
+    	threadMessage("ServerCommTX file send complete to destID: " + inDestID + " LocalFilePath: " + inFilePath);
     			    	
     }
 

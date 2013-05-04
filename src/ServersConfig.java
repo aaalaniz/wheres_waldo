@@ -6,9 +6,10 @@ import java.util.Vector;
 public class ServersConfig{
 	public Vector<ServerConfig> mServers;
 	public int mNumServers;
-	public int mMySSPort; // Server to Server
-	public int mMyCSPort; // Client to/from Server	
+	public int mMySSTCPPort; // Server to Server
+	public int mMyCSTCPPort; // Client to/from Server	
 	public int mMyID;
+	public String mTmpImgPath;
 	//Private constructor because this is SINGLETON
 	private  ServersConfig(){		
 		//This is just the initial size. The add function will re-size this 
@@ -34,15 +35,19 @@ public class ServersConfig{
 	}
 	
 	public int getSSPort(){
-		return mMySSPort;
+		return mMySSTCPPort;
 	}
 	
 	public int getCSPort(){
-		return mMyCSPort;
+		return mMyCSTCPPort;
 	}
 	
 	public int getMyID(){
 		return mMyID;
+	}
+	
+	public String getTmpImgPath(){
+		return mTmpImgPath;
 	}
 	
 	//Get ServerPort from serverID

@@ -25,7 +25,7 @@ public class ServerCommConnect {
 		mSC = ServersConfig.getConfig();
 		mId = mSC.mMyID;
 		mN = mSC.mNumServers;
-		mMyPort = mSC.mMySSPort;
+		mMyPort = mSC.mMySSTCPPort;
 		mDataIn = new BufferedReader[mN];
 		mDataOut = new PrintWriter[mN];  	
 		mSocketOut = new OutputStream[mN];
@@ -51,6 +51,7 @@ public class ServerCommConnect {
 			int destId = Integer.parseInt(st.nextToken());
 			String tag = st.nextToken();
 			if (tag.equals("connect")) {
+				System.out.println("Connect message received from " + hisId);
 				s[hisId] = sc;
 				mDataIn[hisId] = dIn;
 				mDataOut[hisId] = new PrintWriter(sc.getOutputStream());
@@ -64,7 +65,7 @@ public class ServerCommConnect {
 			boolean isConnected = false;
             	
 			//Keep retrying until connected
-			while(isConnected){
+			while(!isConnected){
 				try{
 					s[i] = new Socket(mSC.getServerAddress(i),mSC.getServerPort(i));
 	            	mDataOut[i] = new PrintWriter(s[i].getOutputStream());
@@ -82,8 +83,10 @@ public class ServerCommConnect {
 			}
             	                
 			//send a message to process 
-			mDataOut[i].println(mId + " " + i + " " + "hello" + " " + "null");
+			mDataOut[i].println(mId + " " + i + " " + "connect" + " " + "null");
 			mDataOut[i].flush();
+			
+			System.out.println("Sent connect message to " + i);
 		}
 	}
 	

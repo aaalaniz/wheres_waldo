@@ -3,9 +3,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
-import temp.ServerServerComm;
-
-
 //Class MovieReservationServer
 class Server{
 		
@@ -68,15 +65,19 @@ class Server{
                 {
                 	cfg.mNumServers = Integer.parseInt(st.nextToken());
                 }
+                if(tag.equals("TemplateImagePath")){
+                	cfg.mTmpImgPath = st.nextToken();
+                }
 
                                               
             }
-            cfg.mMySSPort = cfg.getServerPort(cfg.mMyID);
+            cfg.mMySSTCPPort = cfg.getServerPort(cfg.mMyID);
             threadMessage("MyID: " + cfg.mMyID);
-            threadMessage("mMySSPort: " + cfg.mMySSPort);           
+            threadMessage("mMySSTCPPort: " + cfg.mMySSTCPPort);  
+            threadMessage("mMyCSTCPPort: " + cfg.mMyCSTCPPort);  
             threadMessage("NumServers: " + cfg.mNumServers);
-    		for(int i=0; i<cfg.mNumServers;i++){   
-    			//Set all servers alive    			
+            threadMessage("TemplateImagePath: " + cfg.mTmpImgPath);
+    		for(int i=0; i<cfg.mNumServers;i++){       			   			
     			threadMessage("Port: " + cfg.mServers.get(i).getPort());        			 
     			threadMessage("IPAddress: " + cfg.mServers.get(i).getIPAddress());  
     			threadMessage("Name: " + cfg.mServers.get(i).getName());        				
@@ -116,34 +117,46 @@ class Server{
 		//Create server object and process config file
         Server s = new Server(configFile);
 			
-        //Create objects                
-        //Server to Server communication object 
-        ServerCommConnect ssc = new ServerCommConnect();
-        try {
-			ssc.Connect();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
         
-        //ServerCommTX
-        ServerCommTX sct = new ServerCommTX(ssc.GetDataOutStream(), ssc.GetSocketOutStream(), cfg.mMyID);
-   
-        //Server Worker
-        //This object is always instantiated, but only becomes active on receiving messages
-        //Also, at a given time either the server will act as a worker or coordinator
-        ServerWorker sw = new ServerWorker(sct);
-        
-        //Server Coordinator
-        //This object is always instantiated, but only becomes active on receiving messages
-        //Also, at a given time either the server will act as a worker or coordinator
-        ServerCoordinator sc = new ServerCoordinator(sct);
-        
-        //ServerCommRX
-        ServerCommRX scr = new ServerCommRX(ssc.GetDataInStream(), ssc.GetSocketInStream(), sw, sc);
-                           
-        //Client to/from communication object 
-        ServerClientComm scc = new ServerClientComm(sc);
+	        //Create objects                
+	        //Server to Server communication object 
+	        ServerCommConnect ssc = new ServerCommConnect();
+	        try {
+				ssc.Connect();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	        
+	        //ServerCommTX
+	        ServerCommTX sct = new ServerCommTX(ssc.GetDataOutStream(), ssc.GetSocketOutStream(), cfg.mMyID);
+	   
+	        //Server Worker
+	        //This object is always instantiated, but only becomes active on receiving messages
+	        //Also, at a given time either the server will act as a worker or coordinator
+	        ServerWorker sw = new ServerWorker(sct);
+	        
+	        //ServerImageTemplate
+	        ServerImageTemplate sit = new ServerImageTemplate(cfg.getTmpImgPath());
+	        
+	        //Server Coordinator
+	        //This object is always instantiated, but only becomes active on receiving messages
+	        //Also, at a given time either the server will act as a worker or coordinator
+	        ServerCoordinator sc = new ServerCoordinator(sct,sit);
+	        
+	        //ServerCommRX
+	        ServerCommRX scr = new ServerCommRX(ssc.GetDataInStream(), ssc.GetSocketInStream(), sw, sc);
+	                           
+	        //Client to/from communication object 
+	        //ServerClientComm scc = new ServerClientComm(sc);
+	        if(cfg.mMyID == 0){
+	        	String mFilePath = "/home/rahul/Pictures/whereswaldo1.jpg";
+	        	sc.ProcessJob(mFilePath);
+	        }
+	    while(true){	        
+	    	
+	    	
+        }
         
 	}
 	
