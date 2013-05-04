@@ -11,10 +11,13 @@ public class ServerClientComm{
 	//Data members
 	static ServersConfig mSC;
 	static Thread mThRXClient;
+	static ServerCoordinator mSCoord;
+	static String mFilePath;
 	
 	//Constructor
-	public ServerClientComm(){
+	public ServerClientComm(ServerCoordinator inSCoord){
 		mSC = ServersConfig.getConfig();
+		mSCoord = inSCoord;
 		
 		mThRXClient = new Thread(new RXListenClient());
 		mThRXClient.start();
@@ -93,7 +96,9 @@ public class ServerClientComm{
                                         
                     //Process request. 
                     //\todo Instantiate server coordinator, and do the work
+                    mSCoord.ProcessJob(mFilePath);
                     requestOut = "Image Received";
+                    
                     
                     //Respond
                     mOutputStream.println(requestOut);

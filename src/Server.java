@@ -3,6 +3,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
+import temp.ServerServerComm;
+
 
 //Class MovieReservationServer
 class Server{
@@ -69,14 +71,12 @@ class Server{
 
                                               
             }
-            cfg.mMyPort = cfg.getServerPort(cfg.mMyID);
+            cfg.mMySSPort = cfg.getServerPort(cfg.mMyID);
             threadMessage("MyID: " + cfg.mMyID);
-            threadMessage("MyPort: " + cfg.mMyPort);
-            threadMessage("NumSeats: " + cfg.mNumSeats);
+            threadMessage("mMySSPort: " + cfg.mMySSPort);           
             threadMessage("NumServers: " + cfg.mNumServers);
     		for(int i=0; i<cfg.mNumServers;i++){   
-    			//Set all servers alive
-    			cfg.mServers.get(i).setAlive(true);
+    			//Set all servers alive    			
     			threadMessage("Port: " + cfg.mServers.get(i).getPort());        			 
     			threadMessage("IPAddress: " + cfg.mServers.get(i).getIPAddress());  
     			threadMessage("Name: " + cfg.mServers.get(i).getName());        				
@@ -95,7 +95,7 @@ class Server{
 		
         String configFile = "";
         String ID = "";
-        Config cfg = Config.getConfig();
+        ServersConfig cfg = ServersConfig.getConfig();
 
         if (args.length == 2)
         {
@@ -112,25 +112,38 @@ class Server{
 		System.out.println("Starting Server");
 		System.out.println("Config File: " + args[0]);
 		System.out.println();
+		
+		//Create server object and process config file
         Server s = new Server(configFile);
-				
-
+			
         //Create objects                
         //Server to Server communication object 
-        ServerServerComm ssc = new ServerServerComm();
+        ServerCommConnect ssc = new ServerCommConnect();
+        try {
+			ssc.Connect();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         
+        //ServerCommTX
+        ServerCommTX sct = new ServerCommTX(ssc.GetDataOutStream(), ssc.GetSocketOutStream(), cfg.mMyID);
+   
         //Server Worker
         //This object is always instantiated, but only becomes active on receiving messages
         //Also, at a given time either the server will act as a worker or coordinator
-        ServerWorker sw = new ServerWorker(ssc);
+        ServerWorker sw = new ServerWorker(sct);
         
         //Server Coordinator
         //This object is always instantiated, but only becomes active on receiving messages
         //Also, at a given time either the server will act as a worker or coordinator
-        ServerCoordinator sc = new ServerCoordinator(ssc);
+        ServerCoordinator sc = new ServerCoordinator(sct);
         
+        //ServerCommRX
+        ServerCommRX scr = new ServerCommRX(ssc.GetDataInStream(), ssc.GetSocketInStream(), sw, sc);
+                           
         //Client to/from communication object 
-        ServerClientComm scc = new ServerClientComm();
+        ServerClientComm scc = new ServerClientComm(sc);
         
 	}
 	

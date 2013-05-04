@@ -1,5 +1,7 @@
 import javax.imageio.ImageIO;  
 
+import temp.ServerServerComm;
+
 import java.awt.image.BufferedImage;  
 import java.io.*; 
 import java.net.ServerSocket;
@@ -10,13 +12,13 @@ import java.util.ArrayList;
 public class ServerCoordinator {
 	//Data members
 	String mLocalImgPath;
-	int mImgWd, mImgHt, mTmpWd, mTmpHt, mVStride, mHStride, mVSections, mHSections,mNumJobItemsRem;
+	int mImgWd, mImgHt, mTmpWd, mTmpHt, mVStride, mHStride, mVSections, mHSections,mNumJobItemsRem, 
+		mWorkersAvailable,mCurrentJobIdx;
 	static Thread mThImageSender, mThScheduler;
-	static ServerServerComm mSSC;
+	static ServerCommTX mSCT;
 	ArrayList<JobItem> mJIList; // List to track status of job-items
-	Boolean mWorkerAvailable;
-		
 	
+			
 	// List to track status of each worker
 	//Worker status can be 
 	//SELF(It's coordinator itself)
@@ -30,19 +32,22 @@ public class ServerCoordinator {
 	
 	//Constructor	
 	//Instantiated on the server start
-	public ServerCoordinator(ServerServerComm inSSC){
-		mSSC = inSSC;
+	public ServerCoordinator(ServerCommTX inSCT){
+		mSCT = inSCT;
 		mSC = ServersConfig.getConfig();
-		mWorkerAvailable = false;
+		mWorkersAvailable = 0;
 		mNumJobItemsRem = 0;
 		mLocalImgPath = "";
 				
 		mThImageSender = new Thread(new ImageSender(mLocalImgPath));
+		mThScheduler = new Thread(new JobScheduler(this));
 	}
 	
 	//ProcessJob
 	//Called by ServerClientComm on receiving a request from the client
-	public void ProcessJob(){
+	public synchronized void ProcessJob(String inFilePath){
+		
+		mLocalImgPath = inFilePath;
 		
 		//Determine dimension of the image	
 		File file = new File(mLocalImgPath); 
@@ -78,6 +83,7 @@ public class ServerCoordinator {
 			ycoord += mVStride;//Move one down
 		}
 		mNumJobItemsRem = mVSections*mHSections;
+		mCurrentJobIdx = 0;
 			
 		//Create worker status data structure		
 		mWList = new ArrayList<String>();
@@ -88,55 +94,88 @@ public class ServerCoordinator {
 				mWList.add("SELF");
 			}
 		}
-	
+			
 		//Run Image sender thread
 		mThImageSender.start();
 						
 		//Run scheduler thread
+		mThScheduler.start();
 	}
 	
-	
+			
 	//Starts a job on a worker.
 	//Called by the scheduler thread
-	public void JobStart(int inWID, int inXCoord, int inYCoord){
+	public synchronized void JobStart(){
+		Boolean found=false;
+		
+		//Find free worker
+		int n = 0, wid;
+		while(n<mSC.mNumServers && !found){
+			if(mWList.get(n).equals("DONE") || mWList.get(n).equals("IMAGE_SENT")){
+				found = true;
+			}
+			n++;
+		}
+		
+		wid = n-1;
+		
 		//setWorkerStatus to busy		
-		mWList.set(inWID, "BUSY");
+		mWList.set(wid, "BUSY");
+		
+		//Get next job
+		JobItem ji = mJIList.get(mCurrentJobIdx);
 		
 		//send message "job_start" with coordinates to worker server
-		String msg = inXCoord + " " + inYCoord;
-		mSSC.sendMsg(inWID, "job_start", msg);
+		String msg = ji.x  + " " + ji.y;
+		mSCT.sendMsg(wid, "job_start", msg);
+		
+		//Reduce number of workers available
+		mWorkersAvailable--;
+		
+		//Increment job id
+		mCurrentJobIdx++;
+		
+		notify();
 	}
 		
 	//Job Done Receive
 	//Called by ServerServerComm processMSG
-	public void JobDone(int inJobID, int inWID, int inFeatMatched){		
+	public synchronized void JobDone(int inJobID, int inWID, int inFeatMatched){		
 		//setWorkerStatus to done
 		mWList.set(inWID, "DONE");
 		
-		//set number of features matched
+		//update job item
 		mJIList.get(inJobID).mFeatMatched = inFeatMatched;
+		mJIList.get(inJobID).mStatus = "P"; 
 		
 		//Decrement number of mNumJobItemsRem
 		mNumJobItemsRem--;	
 		
-		//Determine worker status
-		//\todo
-		//One of the listener threads will call this, and need to figure out the syntax of 
-		//how the scheduler thread will get notified
-		//updateWorkerStatus();
+		//Increment number of workers available
+		mWorkersAvailable++;
+		
+		notify();
 	}
 
 	//Image receive ack
 	//Called by ServerServerComm processMSG
-	public void ImageRcvAck(int inWID){
+	public synchronized void ImageRcvAck(int inWID){
 		//Set worker status to init
 		mWList.set(inWID, "IMAGE_SENT");
+			
+		mWorkersAvailable++;
 		
-		//Determine worker status
-		
+		notify();
 	}
 	
+	public synchronized int getNumWorkersAvailable(){
+		return mWorkersAvailable;		
+	}
 	
+	public synchronized int getNumJobItemsRem(){
+		return mNumJobItemsRem;		
+	}
+			
 	//Image sender thread
 	//Separate thread so that jobs on some worker threads can get started before
 	//images are transferred to all the workers
@@ -153,7 +192,7 @@ public class ServerCoordinator {
         	for(int i=0;i<mWList.size() ;i++){
         		if(mWList.get(i) != null){
         			if(mWList.get(i).equals("UNINIT")){
-        				mSSC.sendFile(i,mFilePath);
+        				mSCT.sendFile(i,mFilePath);
         			}
         		}
         	}
@@ -164,17 +203,20 @@ public class ServerCoordinator {
 	//Scheduler thread
     private static class JobScheduler implements Runnable
     {    	
-    	public JobScheduler()
+    	ServerCoordinator mSCoord;
+    	public JobScheduler(ServerCoordinator inSCoord)    	
         {    		
+    		mSCoord = inSCoord;
         }
     	
-    	//This keeps on running until their are job items to process.
+    	//This keeps on running until there are job items to process.
         public void run()
         {            
-    		/*while(mNumJobItemsRem){
-    			//if(worker_available)
-    				//start_job();
-    		}*/
+    		while(mSCoord.mNumJobItemsRem > 0){
+    			if(mSCoord.getNumWorkersAvailable() > 1){
+    				mSCoord.JobStart();
+    			}    				
+    		}
         }
     }
 
