@@ -184,8 +184,7 @@ public class SearchWaldoClient extends JPanel
 		
         //Create the open button.  We use the image from the JLF
         //Graphics Repository (but we extracted it from the jar).
-        openButton = new JButton("Open Image",
-                                 createImageIcon("images/Open16.gif", "Open16.gif"));
+        openButton = new JButton("Open Image");
         openButton.addActionListener(this);
  
         //Create the save button.  We use the image from the JLF
@@ -222,31 +221,37 @@ public class SearchWaldoClient extends JPanel
         //Handle submit button action.
         } else if (e.getSource() == submitButton) {
         	File file = fc.getSelectedFile();
-            int returnVal = JOptionPane.showConfirmDialog(
-            		dailogFrame, "Would you to search waldo in " + file.getName() + "?",
-		                    "Confirm your selection",
-		                    JOptionPane.YES_NO_OPTION);
-        	
-            
-            if (returnVal == JOptionPane.YES_OPTION) {
+        	if (file == null){
+        		log.append("You need to select a file before trying to submit" + newline);
+        	}else{
+        		int returnVal = JOptionPane.showConfirmDialog(
+                		dailogFrame, "Would you to search waldo in " + file.getName() + "?",
+    		                    "Confirm your selection",
+    		                    JOptionPane.YES_NO_OPTION);
+            	
                 
-            	//we create new instances as needed.
-                task = new Task();
-                task.addPropertyChangeListener(this);
-                task.execute();
-            	//submitImage();
-            	//File file = fc.getSelectedFile();
+                if (returnVal == JOptionPane.YES_OPTION) {
+                    
+                	//we create new instances as needed.
+                    task = new Task();
+                    task.addPropertyChangeListener(this);
+                    task.execute();
+                	//submitImage();
+                	//File file = fc.getSelectedFile();
+                    
+                    //
+                    
+                    //This is where a real application would save the file.
+                    
+                    
+                    
+                   
+                } else {
+                    log.append("Submit command cancelled by user." + newline);
+                }
                 
-                //
-                
-                //This is where a real application would save the file.
-                
-                
-                
-               
-            } else {
-                log.append("Submit command cancelled by user." + newline);
-            }
+        		
+        	}
             
             
             
@@ -342,7 +347,8 @@ public class SearchWaldoClient extends JPanel
   	//when done
   	//receive image from the server
   	//receive message from the server
-    public void submitImage(){
+/*    
+public void submitImage(){
     	
     	int selectedPort;
 		// Read in the appropriate server info
@@ -401,7 +407,7 @@ public class SearchWaldoClient extends JPanel
 			break tryAgain;
 		}
     }
-    
+    */
     
     //will select a port at random, excludePort will have zero when it gets called for the first time
   	public static int selectPort(int excludePort){
