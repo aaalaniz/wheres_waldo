@@ -82,6 +82,7 @@ public class ServerWorker {
 		mYCoord = inYCoord;
 
 		threadMessage("ServerWorker StartJob. JobItemID:" + mJobItemID +"X: " + mXCoord + "Y: "  +mYCoord);
+
 		try {
 			DoGColourSIFTEngine engine = new DoGColourSIFTEngine();
 			LocalFeatureList<Keypoint> queryKeypoints = engine.findFeatures(mQuery);
