@@ -8,8 +8,7 @@
  */
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import java.net.*;
 import java.nio.channels.SocketChannel;
 import java.util.Random;
 import java.awt.*;
@@ -43,12 +42,16 @@ public class SearchWaldoClient extends JPanel
 	static int[] portsTried;
 	static String clusterConfig;
 	static String logMsg;
+	static int progressCounter;
 	
 	private Task task;
 	
 	class Task extends SwingWorker<Void, Void> {
         /*
          * Main task. Executed in background thread.
+         */
+        /* (non-Javadoc)
+         * @see javax.swing.SwingWorker#doInBackground()
          */
         @Override
         public Void doInBackground() {
@@ -63,75 +66,116 @@ public class SearchWaldoClient extends JPanel
     		    		
     		setProgress(0);
     		//Communicate with the TCP server
-    		tryAgain:
-    		try{			
-    		
-    			logMsg = "Connecting to the server.";
-    			setProgress(1);//try{Thread.sleep(4000);}catch(InterruptedException errr){}
-    			//try to open a tcp/ip connection
-    			InetAddress ia = InetAddress.getByName(ipAddress);
-    			SocketChannel sc = SocketChannel.open(new InetSocketAddress(ia, selectedPort));
-    			
-    			if (sc.isConnected()){
-    				logMsg = "Connected to the server.";
-    				setProgress(2);//try{Thread.sleep(4000);}catch(InterruptedException errr){}
-    				
-    				//Send the file								
-    				File myFile = fc.getSelectedFile();
-    				
-    				byte [] mybytearray  = new byte [(int)myFile.length()];
-    				FileInputStream fis = new FileInputStream(myFile);
-    				BufferedInputStream bis = new BufferedInputStream(fis);
-    				bis.read(mybytearray,0,mybytearray.length);
-    				OutputStream os = sc.socket().getOutputStream();
+    		//try all port if the comm fails or break when it's done
+    		progressCounter = 0;
+    		for (int i = 0; i < port.length; i++){
+	    		
+	    		try{	    			    		
+	    			
+	    			logMsg = "Connecting to the server " + ipAddress + " on port " + selectedPort;
+	    			setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    			//try to open a tcp/ip connection
+	    			InetAddress ia = InetAddress.getByName(ipAddress);
+	    			Socket csSocket = new Socket(ia, selectedPort);
+	    			//SocketChannel sc = SocketChannel.open(new InetSocketAddress(ia, selectedPort));
+	    			
+	    			//if (sc.isConnected()){
+	    			if (csSocket.isConnected()){
+	    				logMsg = "Connected to the server.";
+	    				setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    				
+	    				//Send the file								
+	    				File myFile = fc.getSelectedFile();
+	    				
+	    				byte [] mybytearray  = new byte [(int)myFile.length()];
+	    				FileInputStream fis = new FileInputStream(myFile);
+	    				BufferedInputStream bis = new BufferedInputStream(fis);
+	    				bis.read(mybytearray,0,mybytearray.length);
+	    				OutputStream os = csSocket.getOutputStream();
+	
+	    				//strat the time count
+	    				long start = System.currentTimeMillis();
+	    				
+	    				logMsg = "Uploading file: " + myFile.getName() + ".";
+	    				setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    				
+	    				os.write(mybytearray,0,mybytearray.length);
+	    				os.flush();			
+	    				
+	    				logMsg = "File upload successful.";
+	    				setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    				
+	    				//monitor progress
+	    				logMsg = "Task Completed 0%.";
+	    				setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    				
+	    				//wait to receive the file
+	    				//while(true){}//need to implement this part	    				
+	    				
+	    				//receive the file	    	
+	    				//int filesize=myFile.getName().; // filesize temporary hardcoded
+	    			    byte [] rcvbytearray  = new byte [(int)myFile.length()];
+	    			    InputStream is = csSocket.getInputStream();
+	    			    //create the output file name from the input file name
+	    			    String outFile = myFile.getName().substring(0, myFile.getName().indexOf(".")) + "-highlight." +  myFile.getName().substring(myFile.getName().indexOf("."), myFile.getName().length());
+	    			    FileOutputStream fos = new FileOutputStream(outFile);
+	    			    BufferedOutputStream bos = new BufferedOutputStream(fos);
+	    			    
+	    			    int bytesRead;
+	    			    int current = 0;
+	    			    
+	    			    bytesRead = is.read(mybytearray,0,rcvbytearray.length);
+	    			    current = bytesRead;
 
-    				logMsg = "Uploading file: " + myFile.getName() + ".";
-    				setProgress(3);//try{Thread.sleep(4000);}catch(InterruptedException errr){}
-    				
-    				os.write(mybytearray,0,mybytearray.length);
-    				os.flush();			
-    				
-    				logMsg = "File upload successful.";
-    				setProgress(4);//try{Thread.sleep(4000);}catch(InterruptedException errr){}
-    				
-    				//monitor progress
-    				logMsg = "Task Completed 0%.";
-    				setProgress(5);//try{Thread.sleep(4000);}catch(InterruptedException errr){}
-    			}
-    			else{
-    				//read server response
+	    			    
+	    			    do {
+	    			       bytesRead =
+	    			          is.read(mybytearray, current, (mybytearray.length-current));
+	    			       if(bytesRead >= 0) current += bytesRead;
+	    			    } while(bytesRead > -1);
 
-    			}
-    				
-    			sc.close();
-    			
-    				
-    			
-    			
-    		}
-    		catch (IOException e) {
-    			//e.printStackTrace();
-    			//go to the next port
-    			selectedPort = selectPort(selectedPort);
-    			break tryAgain;
+	    			    bos.write(mybytearray, 0 , current);
+	    			    bos.flush();
+	    			    long end = System.currentTimeMillis();
+	    			    
+	    			    logMsg = "Total time to process the request: " + (end-start) + ".";
+	    				setProgress(setProgressCounter());
+	    			    	    			    	    			    
+	    			    bos.close();
+	    			    
+	    			    csSocket.close();
+	    			    
+	    			    
+	    				
+	    			}
+	    			else{
+	    				//read server response
+	
+	    			}
+	    				
+	    			//sc.close();
+	    			//csSocket.close();
+	    			
+	    			//get out of the loop
+	    			
+	    			i = port.length;
+	    			
+	    			
+	    		}
+	    		catch (IOException e) {
+	    			//e.printStackTrace();
+	    				    			
+	    			logMsg = "Unable to connect to the server " + ipAddress + " on port " + selectedPort;
+	    			setProgress(setProgressCounter());
+	    			
+	    			//go to the next port
+	    			selectedPort = selectPort(selectedPort);
+	    			
+	    		}        	
+	    		
+	    		
     		}
         	
-        	
-        	/*
-        	//Random random = new Random();
-            int progress = 0;
-            //Initialize progress property.
-            setProgress(0);
-            while (progress < 100) {
-                //Sleep for up to one second.
-                try {
-                    Thread.sleep(random.nextInt(1000));
-                } catch (InterruptedException ignore) {}
-                //Make random progress.
-                progress += random.nextInt(10);
-                setProgress(Math.min(progress, 100));
-            }
-            */
             return null;
         }
  
@@ -146,6 +190,21 @@ public class SearchWaldoClient extends JPanel
             //taskOutput.append("Done!\n");
         }
     }
+	
+	
+	public int setProgressCounter(){
+		
+		try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignore) {}
+		
+		if (progressCounter >= 100){
+			progressCounter = 0;			
+		}
+		
+		return progressCounter++;
+	}
+	
 	
 	public SearchWaldoClient(){
 		//super(new GridLayout(3,1));  //3 rows, 1 column
@@ -317,7 +376,7 @@ public class SearchWaldoClient extends JPanel
 			return;
 		}
 		clusterConfig = a[0];
-		if (!clusterConfig.equals("aaron") && !clusterConfig.equals("arefin") && !clusterConfig.equals("grader")) {
+		if (!clusterConfig.equals("aaron") && !clusterConfig.equals("arefin") && !clusterConfig.equals("rahul")) {
 			System.out.println("Server configuration id not valid. Please enter aaron, arefin, or grader as argument");
 			return;
 		}
@@ -347,67 +406,7 @@ public class SearchWaldoClient extends JPanel
   	//when done
   	//receive image from the server
   	//receive message from the server
-/*    
-public void submitImage(){
-    	
-    	int selectedPort;
-		// Read in the appropriate server info
-		extractServerInfo();
-		
-		//select the server in random
-		selectedPort = selectPort(0);
-		
-		String progress = "Connecting to the server.";
-		//Communicate with the TCP server
-		tryAgain:
-		try{			
-		
-			//log.append("Connecting to the server." + newline);
-			//try to open a tcp/ip connection
-			InetAddress ia = InetAddress.getByName(ipAddress);
-			SocketChannel sc = SocketChannel.open(new InetSocketAddress(ia, selectedPort));
-			
-			if (sc.isConnected()){
-				progress = "Connected to the server.";
 
-				//Send the file								
-				File myFile = fc.getSelectedFile();
-				
-				byte [] mybytearray  = new byte [(int)myFile.length()];
-				FileInputStream fis = new FileInputStream(myFile);
-				BufferedInputStream bis = new BufferedInputStream(fis);
-				bis.read(mybytearray,0,mybytearray.length);
-				OutputStream os = sc.socket().getOutputStream();
-
-				progress = "Uploading file: " + myFile.getName() + ".";
-				
-				os.write(mybytearray,0,mybytearray.length);
-				os.flush();			
-				
-				progress = "File upload successful.";
-				
-				//monitor progress
-				progress = "Task Completed 0%.";
-			}
-			else{
-				//read server response
-
-			}
-				
-			sc.close();
-			
-				
-			
-			
-		}
-		catch (IOException e) {
-			//e.printStackTrace();
-			//go to the next port
-			selectedPort = selectPort(selectedPort);
-			break tryAgain;
-		}
-    }
-    */
     
     //will select a port at random, excludePort will have zero when it gets called for the first time
   	public static int selectPort(int excludePort){
