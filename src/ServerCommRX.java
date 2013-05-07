@@ -79,7 +79,7 @@ public class ServerCommRX {
     }
     
     //Process Msg
-    public void processMsg(ServerMsg m){
+    public void processMsg(ServerMsg m) throws IOException{
     	String tag = m.getTag();
     	tag = tag.trim();
     	

@@ -1,14 +1,29 @@
 import javax.imageio.ImageIO;  
+
+import org.openimaj.image.ImageUtilities;
+import org.openimaj.image.MBFImage;
+import org.openimaj.image.colour.ColourSpace;
+import org.openimaj.image.colour.RGBColour;
+import org.openimaj.image.pixel.Pixel;
+import org.openimaj.image.typography.general.GeneralFont;
+import org.openimaj.math.geometry.shape.Polygon;
+
+import java.awt.Font;
 import java.awt.image.BufferedImage;  
 import java.io.*; 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 
 
 public class ServerCoordinator {
-	//Data members
-	String mLocalImgPath;
+	private static final int NUM_RESULTS = 3;
+	private final static String WALDO_RESULT_IMAGE = "waldo_search_results.jpg";
+	static //Data members
 	String mLocalBasePath;//Base path is $HOME/WaldoFiles/Coordinator
 	int mImgWd, mImgHt, mTmpWd, mTmpHt, mVStride, mHStride, mVSections, mHSections,mNumJobItemsRem, 
 		mWorkersAvailable,mCurrentJobIdx;
@@ -16,7 +31,7 @@ public class ServerCoordinator {
 	ImageSenderThread mImgS;
 	static Thread mThImageSender, mThScheduler;
 	static ServerCommTX mSCT;
-	ArrayList<JobItem> mJIList; // List to track status of job-items
+	static ArrayList<JobItem> mJIList; // List to track status of job-items
 	
 			
 	// List to track status of each worker
@@ -278,10 +293,61 @@ public class ServerCoordinator {
     			}    				
     		}
     		
-        	//Job Completed
-        	//\todo send message back to the client
-        	//Call ServerClientComm
+    		// Load the image and sort the candidates by number of matches
+    		MBFImage target = null;
+			try {
+				target = ImageUtilities.readMBF(new File(mLocalImgPath));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    		List<MatchCandidate> curCandidates = new LinkedList<MatchCandidate>();
+    		Collections.sort(mJIList, new Comparator<JobItem>(){
+				@Override
+				public int compare(JobItem job1, JobItem job2) {
+					if (job1.mFeatMatched > job2.mFeatMatched) {
+						return -1;
+					} else if (job1.mFeatMatched < job2.mFeatMatched) {
+						return 1;
+					}
+					return 0;
+				}
+    		});
+    		
+    		// Draw the top 3 results on the image
+    		for (int i = 0, j = 0 ; j < NUM_RESULTS ; i++) {
+    			JobItem result = mJIList.get(i);
+    			MatchCandidate curBest = new MatchCandidate(result.x, result.y, result.mFeatMatched);
+    			if (overlappingResult(curBest, curCandidates)) continue;
+    			curCandidates.add(curBest);
+    			ArrayList<Pixel> rectangle = new ArrayList<Pixel>();
+    			rectangle.add(new Pixel(curBest.x, curBest.y));
+    			rectangle.add(new Pixel(curBest.x, curBest.y + ServerWorker.SUB_IMAGE_HEIGHT));
+    			rectangle.add(new Pixel(curBest.x + ServerWorker.SUB_IMAGE_WIDTH, curBest.y));
+    			rectangle.add(new Pixel(curBest.x + ServerWorker.SUB_IMAGE_WIDTH, curBest.y + ServerWorker.SUB_IMAGE_HEIGHT));
+    			target.drawShape(new Polygon(rectangle).calculateRegularBoundingBox(), 3,RGBColour.BLACK);
+    			target.drawText(Integer.toString(j), curBest.x - 10, curBest.y - 10, new GeneralFont("Courier", Font.BOLD), 26, RGBColour.BLACK);
+    		}
+    		
+    		// Save the image locally
+    		int[] imageBytes = target.toPackedARGBPixels();
+    		BufferedImage resultImage = new BufferedImage(target.getWidth(), target.getHeight(), BufferedImage.TYPE_INT_RGB);
+    		resultImage.setRGB(0, 0, target.getWidth(), target.getHeight(), imageBytes, 0, target.getWidth());
+    		try {
+				ImageIO.write(resultImage, "jpg", new File(WALDO_RESULT_IMAGE));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+>>>>>>> 807bf41f28c86a6b200c00c50ae8a3f136a5aa61
         }
+		
+		private static boolean overlappingResult(MatchCandidate curBest, List<MatchCandidate> curCandidates) {
+			for (MatchCandidate curCandidate : curCandidates) {
+				if (curCandidate.overlaps(curBest)) {
+					return true;
+				}
+			}
+			return false;
+		}
     }
 
 		
