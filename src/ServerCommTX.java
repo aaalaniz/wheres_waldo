@@ -53,7 +53,8 @@ public class ServerCommTX {
         	InetAddress myIA=null;
         	try {
 
-                myIA = InetAddress.getByName(mSC.mServers.get(destId).getName());
+                myIA = InetAddress.getByName(mSC.mServers.get(destId).getIPAddress());
+        		//mmIA = InetAddress.get
         	} catch (UnknownHostException e) {
                 System.err.println(e);
         	}
