@@ -24,16 +24,19 @@
 	        <port>8082</port>
 	    </server>	                
 	</cluster>
-	<cluster id="grader">	    
+	<cluster id="rahul">	    
 	    <ipAddress>127.0.0.1</ipAddress>	    
 	    <server id="zero">
-	        <port>8080</port>
+	        <port>45001</port>
 	    </server>
 	    <server id="one">
-	        <port>8081</port>
+	        <port>45002</port>
 	    </server>
 	    <server id="two">
-	        <port>8082</port>
-	    </server>	                
+	        <port>45003</port>
+	    </server>	   
+	     <server id="three">
+	        <port>45004</port>
+	    </server>	             
 	</cluster>
 </serverClusters>
