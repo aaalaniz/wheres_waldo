@@ -13,8 +13,10 @@ import java.nio.channels.SocketChannel;
 import java.util.Random;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.beans.*;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -73,16 +75,15 @@ public class SearchWaldoClient extends JPanel
 	    		try{	    			    		
 	    			
 	    			logMsg = "Connecting to the server " + ipAddress + " on port " + selectedPort;
-	    			setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    			setProgress(setProgressCounter());
 	    			//try to open a tcp/ip connection
 	    			InetAddress ia = InetAddress.getByName(ipAddress);
 	    			Socket csSocket = new Socket(ia, selectedPort);
-	    			//SocketChannel sc = SocketChannel.open(new InetSocketAddress(ia, selectedPort));
-	    			
-	    			//if (sc.isConnected()){
+	    		    			
+	    		
 	    			if (csSocket.isConnected()){
 	    				logMsg = "Connected to the server.";
-	    				setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    				setProgress(setProgressCounter());
 	    				
 	    				//Send the file								
 	    				File myFile = fc.getSelectedFile();
@@ -97,17 +98,17 @@ public class SearchWaldoClient extends JPanel
 	    				long start = System.currentTimeMillis();
 	    				
 	    				logMsg = "Uploading file: " + myFile.getName() + ".";
-	    				setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    				setProgress(setProgressCounter());
 	    				
 	    				os.write(mybytearray,0,mybytearray.length);
 	    				os.flush();			
 	    				
 	    				logMsg = "File upload successful.";
-	    				setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    				setProgress(setProgressCounter());
 	    				
 	    				//monitor progress
 	    				logMsg = "Task Completed 0%.";
-	    				setProgress(setProgressCounter());//try{Thread.sleep(4000);}catch(InterruptedException errr){}
+	    				setProgress(setProgressCounter());
 	    				
 	    				//wait to receive the file
 	    				//while(true){}//need to implement this part	    				
@@ -117,7 +118,8 @@ public class SearchWaldoClient extends JPanel
 	    			    byte [] rcvbytearray  = new byte [(int)myFile.length()];
 	    			    InputStream is = csSocket.getInputStream();
 	    			    //create the output file name from the input file name
-	    			    String outFile = myFile.getName().substring(0, myFile.getName().indexOf(".")) + "-highlight." +  myFile.getName().substring(myFile.getName().indexOf("."), myFile.getName().length());
+	    			    String outFile = myFile.getParentFile() + "\\"  + myFile.getName().substring(0, myFile.getName().indexOf(".")) + "-highlight." +  myFile.getName().substring(myFile.getName().indexOf("."), myFile.getName().length());
+	    			    
 	    			    FileOutputStream fos = new FileOutputStream(outFile);
 	    			    BufferedOutputStream bos = new BufferedOutputStream(fos);
 	    			    
@@ -145,17 +147,16 @@ public class SearchWaldoClient extends JPanel
 	    			    
 	    			    csSocket.close();
 	    			    
-	    			    
-	    				
+	    			    //Display image
+	    			    DisplayImage.displayImgFrame(outFile);
+	    			  
 	    			}
 	    			else{
 	    				//read server response
 	
 	    			}
 	    				
-	    			//sc.close();
-	    			//csSocket.close();
-	    			
+	    				    				    			
 	    			//get out of the loop
 	    			
 	    			i = port.length;
