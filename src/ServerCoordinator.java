@@ -24,8 +24,9 @@ public class ServerCoordinator {
 	private static final int NUM_RESULTS = 3;
 	private final static String WALDO_RESULT_IMAGE = "waldo_search_results.jpg";
 	static //Data members
+	String mLocalImgPath;
 	String mLocalBasePath;//Base path is $HOME/WaldoFiles/Coordinator
-	int mImgWd, mImgHt, mTmpWd, mTmpHt, mVStride, mHStride, mVSections, mHSections,mNumJobItemsRem, 
+	int mImgWd, mImgHt, mTmpWd, mTmpHt, mVStride, mHStride,mNumJobItemsRem, 
 		mWorkersAvailable,mCurrentJobIdx;
 	ServerImageTemplate mSit;
 	ImageSenderThread mImgS;
@@ -111,25 +112,20 @@ public class ServerCoordinator {
 		//Determine how many sub-sections of image we need to process
 		//This is equal to number of job items	
 		//\todo should be set at run time from image dimensions
-		mHStride = 10;
-		mVStride = 10;
-		mHSections = (mImgWd/mHStride) - (mSit.getTmpWd()/mHStride + 1);
-		mVSections = (mImgHt/mVStride) - (mSit.getTmpHt()/mVStride + 1);
+		mHStride = 5;
+		mVStride = 5;
 				
 		//Create job queue data structure			
 		mJIList = new ArrayList<JobItem>();
 		int xcoord =0, ycoord = 0;
-		for(int rows=0; rows<mVSections; rows++){
-			for(int cols=0; cols<mHSections; cols++){
+		for(xcoord=0; xcoord<mImgWd; xcoord+=mHStride){
+			for(ycoord=0; ycoord<mImgHt; ycoord+=mVStride){
 				JobItem ji = new JobItem(xcoord,ycoord);
 				mJIList.add(ji);
-				
-				xcoord += mHStride; //Get next section to the right
-			}
-			xcoord = 0; //Move back to the left again
-			ycoord += mVStride;//Move one down
+								
+			}				
 		}
-		mNumJobItemsRem = mVSections*mHSections;
+		mNumJobItemsRem = mJIList.size();
 		mCurrentJobIdx = 0;
 			
 		//Create worker status data structure		
@@ -337,7 +333,7 @@ public class ServerCoordinator {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
->>>>>>> 807bf41f28c86a6b200c00c50ae8a3f136a5aa61
+
         }
 		
 		private static boolean overlappingResult(MatchCandidate curBest, List<MatchCandidate> curCandidates) {
@@ -365,6 +361,8 @@ public class ServerCoordinator {
 			mFeatMatched = 0;
 			mWID = -1;
 			mStatus = "NP";
+			x = inX;
+			y = inY;
 		}
 		
 	}
