@@ -1,3 +1,5 @@
+import java.io.IOException;
+import java.util.Random;
 
 
 
@@ -43,20 +45,25 @@ public class ServerWorker {
 	public void ImageReceived(String inFilePath){
 		mFilePath = inFilePath;
 		threadMessage("ServerWorker ImageReceived " + inFilePath);
-		mSST.sendMsg(mcoordID, "image_received_ack","");
+		try {
+			String msg = "image_received_ack#" + " ";
+			mSST.sendMsg(mcoordID, msg);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	//ProcessImage
 	//Called by SSC.processMsg when "job_start" message is received
 	//XCoord, YCoord, and JobItemID are sent by the coordinator along with the "job_start"
-	public void StartJob(int inXCoord, int inYCoord, int inJobItemID){
+	public void StartJob(int inXCoord, int inYCoord, int inJobItemID) throws InterruptedException{
 		mJobItemID = inJobItemID;
 		mXCoord = inXCoord;
 		mYCoord = inYCoord; 
 		
 		threadMessage("ServerWorker StartJob. JobItemID:" + mJobItemID +"X: " + mXCoord + "Y: "  +mYCoord);
 		
-		//\todo call image processing code here
 	}
 	
 	//Done
@@ -64,9 +71,14 @@ public class ServerWorker {
 	//This sends "job_done" message with JobItemID and Features Matched back to the coordinator
 	public void Done(int inJobItemID, int inFeatMatched){
 		//Send a message back to coordinator with number of features matched
-		String msg = inJobItemID + " " + inFeatMatched;
+		String msg = "job_done#" +inJobItemID + " " + inFeatMatched;
 		threadMessage("ServerWorker JobDone. JobItemID:" + mJobItemID + "FeaturesMatched: " + inFeatMatched);
-		mSST.sendMsg(mcoordID, "job_done", msg);		
+		try {
+			mSST.sendMsg(mcoordID,msg);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
 	}
 		
 }

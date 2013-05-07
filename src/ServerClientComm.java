@@ -21,6 +21,8 @@ public class ServerClientComm{
 		
 		mThRXClient = new Thread(new RXListenClient());
 		mThRXClient.start();
+		
+		 threadMessage("ServerClientComm:Created");
 	}
 	
     static void threadMessage(String message)
@@ -37,9 +39,9 @@ public class ServerClientComm{
     {
         public void run()
         {
-            threadMessage("ServerRX:Starting TCP ServerRX");
+            threadMessage("ServerClientComm:Starting TCP ServerRX");
 
-            try
+            /*try
             {
                 ServerSocket ss = new ServerSocket(mSC.getCSPort());
 
@@ -55,7 +57,19 @@ public class ServerClientComm{
             {
                 System.err.println(e);
                 System.exit(-1);
-            }
+            }*/
+            if(mSC.mMyID == 0){
+	            threadMessage("ServerClientComm: Waiting before kicking off the job");
+	            try {
+					Thread.sleep(15000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+	            
+		        	String mFilePath = "whereswaldo1.jpg";
+		        	mSCoord.ProcessJob(mFilePath);
+	        }           
         }
     }
     

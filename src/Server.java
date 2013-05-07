@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.util.StringTokenizer;
 
 //Class MovieReservationServer
@@ -40,8 +42,8 @@ class Server{
                 	
                 	// \todo error checking
                 	String address = null, name = null;
-                	int port = 0;
-                	for(int i = 0; i<4; i++){
+                	int ssport =0, csport = 0, ssudpport=0;
+                	for(int i = 0; i<5; i++){
 	                	line = fin.readLine();
 	                	StringTokenizer st1 = new StringTokenizer(line, " :");
 	                	String tag1 = st1.nextToken();
@@ -52,13 +54,16 @@ class Server{
 	                		name = st1.nextToken();
 	                	}
 	                	if (tag1.equals("SSTCPPort")){	                    	
-	                		port = Integer.parseInt(st1.nextToken());
+	                		ssport = Integer.parseInt(st1.nextToken());
 	                	}
-	                	if (tag1.equals("CSTCPPort")){	                    	
-	                		port = Integer.parseInt(st1.nextToken());
+	                	if (tag1.equals("CSTCPPort")){	                    		                		
+	                		csport =  Integer.parseInt(st1.nextToken());
+	                	}
+	                	if (tag1.equals("SSUDPPort")){	                    		                		
+	                		ssudpport =  Integer.parseInt(st1.nextToken());
 	                	}
                 	}
-                	cfg.addServer(port, name, address);
+                	cfg.addServer(ssport, name, address,ssudpport);
                 }
 
                 if (tag.equals("NumServers"))
@@ -71,14 +76,17 @@ class Server{
 
                                               
             }
-            cfg.mMySSTCPPort = cfg.getServerPort(cfg.mMyID);
+            cfg.mMySSTCPPort = cfg.getServerTCPPort(cfg.mMyID);  
+            cfg.mMySSUDPPort = cfg.getServerUDPPort(cfg.mMyID);
             threadMessage("MyID: " + cfg.mMyID);
             threadMessage("mMySSTCPPort: " + cfg.mMySSTCPPort);  
+            threadMessage("mMySSUDPPort: " + cfg.mMySSUDPPort);  
             threadMessage("mMyCSTCPPort: " + cfg.mMyCSTCPPort);  
             threadMessage("NumServers: " + cfg.mNumServers);
             threadMessage("TemplateImagePath: " + cfg.mTmpImgPath);
     		for(int i=0; i<cfg.mNumServers;i++){       			   			
-    			threadMessage("Port: " + cfg.mServers.get(i).getPort());        			 
+    			threadMessage("SSTCPPort: " + cfg.mServers.get(i).getTCPPort());   
+    			threadMessage("SSUDPPort: " + cfg.mServers.get(i).getUDPPort());
     			threadMessage("IPAddress: " + cfg.mServers.get(i).getIPAddress());  
     			threadMessage("Name: " + cfg.mServers.get(i).getName());        				
     		}
@@ -92,7 +100,7 @@ class Server{
 		
 	
 	//Main entry point in the client program
-	public static void main(String[] args){
+	public static void main(String[] args) throws IOException{
 		
         String configFile = "";
         String ID = "";
@@ -119,17 +127,17 @@ class Server{
 			
         
 	        //Create objects                
-	        //Server to Server communication object 
-	        ServerCommConnect ssc = new ServerCommConnect();
-	        try {
-				ssc.Connect();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
+        	//Create a Datagram socket
+        	DatagramSocket UDPSocket=null;
+			try {
+				UDPSocket = new DatagramSocket(cfg.mMySSUDPPort);
+			} catch (SocketException e) {
+				//TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 	        
 	        //ServerCommTX
-	        ServerCommTX sct = new ServerCommTX(ssc.GetDataOutStream(), ssc.GetSocketOutStream(), cfg.mMyID);
+	        ServerCommTX sct = new ServerCommTX(UDPSocket);
 	   
 	        //Server Worker
 	        //This object is always instantiated, but only becomes active on receiving messages
@@ -144,19 +152,11 @@ class Server{
 	        //Also, at a given time either the server will act as a worker or coordinator
 	        ServerCoordinator sc = new ServerCoordinator(sct,sit);
 	        
-	        //ServerCommRX
-	        ServerCommRX scr = new ServerCommRX(ssc.GetDataInStream(), ssc.GetSocketInStream(), sw, sc);
-	                           
 	        //Client to/from communication object 
-	        //ServerClientComm scc = new ServerClientComm(sc);
-	        if(cfg.mMyID == 0){
-	        	String mFilePath = "/home/rahul/Pictures/whereswaldo1.jpg";
-	        	sc.ProcessJob(mFilePath);
-	        }
-	    while(true){	        
-	    	
-	    	
-        }
+	        ServerClientComm scc = new ServerClientComm(sc);
+	        
+	        //ServerCommRX
+	        ServerCommRX scr = new ServerCommRX(sw, sc,UDPSocket);	                           
         
 	}
 	

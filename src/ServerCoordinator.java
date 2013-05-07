@@ -9,6 +9,7 @@ import java.util.ArrayList;
 public class ServerCoordinator {
 	//Data members
 	String mLocalImgPath;
+	String mLocalBasePath;//Base path is $HOME/WaldoFiles/Coordinator
 	int mImgWd, mImgHt, mTmpWd, mTmpHt, mVStride, mHStride, mVSections, mHSections,mNumJobItemsRem, 
 		mWorkersAvailable,mCurrentJobIdx;
 	ServerImageTemplate mSit;
@@ -22,6 +23,9 @@ public class ServerCoordinator {
 	//Worker status can be 
 	//SELF(It's coordinator itself)
 	//UNINIT(Worker hasn't received image yet)
+	//INIT_START(Worker init message has been sent, but hasn't received an ack yet)
+	//INIT_DONE(Worker init message has been sent and ack received)
+	//IMAGE_SEND_START
 	//IMAGE_SENT(Worker has received image)
 	//BUSY(Worker is still processing the last request sent by the coordinator)
 	//DONE(Worker is done processing the last request)
@@ -31,7 +35,7 @@ public class ServerCoordinator {
 	
 	//Constructor	
 	//Instantiated on the server start
-	public ServerCoordinator(ServerCommTX inSCT, ServerImageTemplate inSit){
+	public ServerCoordinator(ServerCommTX inSCT, ServerImageTemplate inSit) throws IOException{
 		mSCT = inSCT;
 		mSit = inSit;
 		mSC = ServersConfig.getConfig();
@@ -42,7 +46,18 @@ public class ServerCoordinator {
 		mImgS = new ImageSenderThread();
 		mThImageSender = new Thread(mImgS);
 		mThScheduler = new Thread(new JobScheduler(this));
-						
+	
+		//Create directories
+		
+		File homeDir = new File(System.getProperty("user.home"));
+		File dir = new File(homeDir,"//WaldoFiles//Coordinator//" + "_" + mSC.getMyID());
+		if (!dir.exists() && !dir.mkdirs()) {
+			throw new IOException("Unable to create " + dir.getAbsolutePath());
+		}	
+		else{
+			mLocalBasePath = dir.getPath();
+		}
+		
 		threadMessage("Server Coordinator instantiated");
 	}
 	
@@ -57,11 +72,11 @@ public class ServerCoordinator {
 	
 	//ProcessJob
 	//Called by ServerClientComm on receiving a request from the client
-	public synchronized void ProcessJob(String inFilePath){
+	public synchronized void ProcessJob(String inFileName){
+				
+		mLocalImgPath = mLocalBasePath  + "/" + inFileName;
 		
-		mLocalImgPath = inFilePath;
-		
-		threadMessage("ServerCoordinator Process Job: " +mLocalImgPath);
+		threadMessage("ServerCoordinator Process Job: " + mLocalImgPath);
 		
 		//Determine dimension of the image	
 		File file = new File(mLocalImgPath); 
@@ -145,8 +160,13 @@ public class ServerCoordinator {
 		JobItem ji = mJIList.get(mCurrentJobIdx);
 		
 		//send message "job_start" with coordinates to worker server
-		String msg = ji.x  + " " + ji.y;
-		mSCT.sendMsg(wid, "job_start", msg);
+		String msg = "job_start#" + ji.x  + " " + ji.y + " " + mCurrentJobIdx;
+		try {
+			mSCT.sendMsg(wid,msg);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		//Reduce number of workers available
 		mWorkersAvailable--;
@@ -175,7 +195,7 @@ public class ServerCoordinator {
 		
 		notify();
 	}
-
+	
 	//Image receive ack
 	//Called by ServerServerComm processMSG
 	public synchronized void ImageRcvAck(int inWID){
@@ -221,10 +241,19 @@ public class ServerCoordinator {
         	for(int i=0;i<mWList.size() ;i++){
         		if(mWList.get(i) != null){
         			if(mWList.get(i).equals("UNINIT")){
-        				mSCT.sendFile(i,mFilePath);
+        				String msg = "job_init#" + Integer.toString(mSC.mMyID);
+        				try {
+							mSCT.sendMsg(i, msg);
+							mSCT.sendFile(i,mFilePath);  
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}    
+        				     
         			}
         		}
-        	}
+        	}        	        	
+
         }
         
 
@@ -243,11 +272,15 @@ public class ServerCoordinator {
     	//This keeps on running until there are job items to process.
         public void run()
         {            
-    		while(mSCoord.mNumJobItemsRem > 0){
-    			if(mSCoord.getNumWorkersAvailable() > 1){
+    		while(mSCoord.getNumJobItemsRem() > 0){
+    			if(mSCoord.getNumWorkersAvailable() > 0){
     				mSCoord.JobStart();
     			}    				
     		}
+    		
+        	//Job Completed
+        	//\todo send message back to the client
+        	//Call ServerClientComm
         }
     }
 
