@@ -1,6 +1,9 @@
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.*;
@@ -21,8 +24,6 @@ public class ServerClientComm{
 		
 		mThRXClient = new Thread(new RXListenClient());
 		mThRXClient.start();
-		
-		 threadMessage("ServerClientComm:Created");
 	}
 	
     static void threadMessage(String message)
@@ -39,9 +40,9 @@ public class ServerClientComm{
     {
         public void run()
         {
-            threadMessage("ServerClientComm:Starting TCP ServerRX");
+            threadMessage("ServerRX:Starting TCP ServerRX");
 
-            /*try
+            try
             {
                 ServerSocket ss = new ServerSocket(mSC.getCSPort());
 
@@ -57,19 +58,7 @@ public class ServerClientComm{
             {
                 System.err.println(e);
                 System.exit(-1);
-            }*/
-            if(mSC.mMyID == 0){
-	            threadMessage("ServerClientComm: Waiting before kicking off the job");
-	            try {
-					Thread.sleep(15000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-	            
-		        	String mFilePath = "whereswaldo1.jpg";
-		        	mSCoord.ProcessJob(mFilePath);
-	        }           
+            }
         }
     }
     
@@ -98,7 +87,18 @@ public class ServerClientComm{
         {
             try
             {
-                String requestIn, requestOut;
+
+            	 //MArefin set the file name
+                //mFilePath = "SearchWaldoImage";//ok                
+                
+			    //create the output file name from the input file name
+			    //String inFile = mSCoord.mLocalBasePath + "/" + mFilePath;	    
+			    
+			    mFilePath = FileTransfer.receiveFile(mS, mSCoord.mLocalBasePath);
+            	
+			    
+            	
+            	String requestIn, requestOut;
 
                 while ((requestIn = mInputStream.readLine()) != null)
                 {
