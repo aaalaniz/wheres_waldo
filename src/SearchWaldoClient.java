@@ -106,13 +106,13 @@ public class SearchWaldoClient extends JPanel
 	    				//monitor progress
 	    				logMsg = "Task Completed 0%.";
 	    				setProgress(setProgressCounter());
-	    				
-	    				
-	    				
-	    				//read line from ther 
+	    					    				 
 	    				//receive the file	  
-	    				String outFile = fc.getSelectedFile().getParentFile() + "\\"  + fc.getSelectedFile().getName().substring(0, fc.getSelectedFile().getName().indexOf(".")) + "-highlight." +  fc.getSelectedFile().getName().substring(fc.getSelectedFile().getName().indexOf("."), fc.getSelectedFile().getName().length());
-	    				FileTransfer.receiveFile(csSocket, outFile);
+	    				String filePath = fc.getSelectedFile().getParentFile().getPath();
+	    				String outFile = FileTransfer.receiveFile(csSocket, filePath);
+	    						
+	    						//fc.getSelectedFile().getParentFile() + "\\"  + fc.getSelectedFile().getName().substring(0, fc.getSelectedFile().getName().indexOf(".")) + "-highlight." +  fc.getSelectedFile().getName().substring(fc.getSelectedFile().getName().indexOf("."), fc.getSelectedFile().getName().length());
+	    				
 	    					    				
 	    			    long end = System.currentTimeMillis();
 	    			    
