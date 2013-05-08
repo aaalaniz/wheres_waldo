@@ -37,6 +37,9 @@
 	    </server>	   
 	     <server id="three">
 	        <port>45004</port>
+	    </server>	
+	    <server id="four">
+	        <port>45005</port>
 	    </server>	             
 	</cluster>
 </serverClusters>

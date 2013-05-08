@@ -63,7 +63,7 @@ class Server{
 	                		ssudpport =  Integer.parseInt(st1.nextToken());
 	                	}
                 	}
-                	cfg.addServer(ssport, name, address,ssudpport);
+                	cfg.addServer(ssport, name, address,ssudpport, csport); //MArefin added , csport
                 }
 
                 if (tag.equals("NumServers"))
@@ -72,12 +72,22 @@ class Server{
                 }
                 if(tag.equals("TemplateImagePath")){
                 	cfg.mTmpImgPath = st.nextToken();
+                	
+                	//MArefin debugging in windows machines
+                	//resolve the file path
+                	if (cfg.mTmpImgPath.equals("C")){
+                		String filePath = st.nextToken();;
+                		cfg.mTmpImgPath = cfg.mTmpImgPath + ":" + filePath;
+                		
+                	}
                 }
 
                                               
             }
             cfg.mMySSTCPPort = cfg.getServerTCPPort(cfg.mMyID);  
             cfg.mMySSUDPPort = cfg.getServerUDPPort(cfg.mMyID);
+            //MArefin 5/7/2013
+            cfg.mMyCSTCPPort = cfg.getClientServerTCPPort(cfg.mMyID);
             threadMessage("MyID: " + cfg.mMyID);
             threadMessage("mMySSTCPPort: " + cfg.mMySSTCPPort);  
             threadMessage("mMySSUDPPort: " + cfg.mMySSUDPPort);  

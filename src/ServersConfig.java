@@ -30,8 +30,8 @@ public class ServersConfig{
 	}
 	
 	//Add servers to the list while parsing the config file
-	public void addServer(int inSSPort, String inName, String inIPAddress,int inSSUDPPort){
-		ServerConfig sc = new ServerConfig(inSSPort,inName, inIPAddress,inSSUDPPort);
+	public void addServer(int inSSPort, String inName, String inIPAddress,int inSSUDPPort,int inCSTCPPort){ //Marefin added ,int inCSTCPPort
+		ServerConfig sc = new ServerConfig(inSSPort,inName, inIPAddress,inSSUDPPort,inCSTCPPort); //Marefin added ,inCSTCPPort
 		mServers.add(sc);
 	}
 	
@@ -74,6 +74,18 @@ public class ServersConfig{
 		}		
 	}
 	
+	//Marefin
+	//Get ServerPort from serverID
+		public int getClientServerTCPPort(int inServerID){
+			try{
+				return mServers.get(inServerID).getCSTCPPort();
+			} 
+			catch(ArrayIndexOutOfBoundsException e){
+				System.err.println(e);
+				return 0;
+			}		
+		}
+		
 	//Get ServerAddress from serverID
 	public String getServerAddress(int inServerID){
 		try{
@@ -117,18 +129,24 @@ public class ServersConfig{
 //Class for server config objects
 class ServerConfig{
 	private int mSSTCPPort, mSSUDPPort;
+	//Marefin
+	private int mCSTCPPort;
 	private String mName;
 	private String mIPAddress;
-	
-	ServerConfig(int inSSTCPPort, String inName, String inIPAddress, int inSSUDPPort){
+																													
+	ServerConfig(int inSSTCPPort, String inName, String inIPAddress, int inSSUDPPort, int inCSTCPPort){//MArefin added , int inCSTCPPort
 		mSSTCPPort = inSSTCPPort;
 		mName = inName;
 		mIPAddress = inIPAddress;
 		mSSUDPPort = inSSUDPPort;
+		//MArefin
+		mCSTCPPort = inCSTCPPort;
 	}
 	
 	public int getTCPPort() { return mSSTCPPort;}	
 	public int getUDPPort() { return mSSUDPPort;}
+	//Marefin 
+	public int getCSTCPPort() { return mCSTCPPort;}
 	public String getName() { return mName; }
 	public String getIPAddress() { return mIPAddress; }
 

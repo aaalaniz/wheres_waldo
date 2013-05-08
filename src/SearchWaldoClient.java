@@ -126,17 +126,17 @@ public class SearchWaldoClient extends JPanel
 	    			    int bytesRead;
 	    			    int current = 0;
 	    			    
-	    			    bytesRead = is.read(mybytearray,0,rcvbytearray.length);
+	    			    bytesRead = is.read(rcvbytearray,0,rcvbytearray.length);
 	    			    current = bytesRead;
 
 	    			    
 	    			    do {
 	    			       bytesRead =
-	    			          is.read(mybytearray, current, (mybytearray.length-current));
+	    			          is.read(rcvbytearray, current, (rcvbytearray.length-current));
 	    			       if(bytesRead >= 0) current += bytesRead;
 	    			    } while(bytesRead > -1);
 
-	    			    bos.write(mybytearray, 0 , current);
+	    			    bos.write(rcvbytearray, 0 , current);
 	    			    bos.flush();
 	    			    long end = System.currentTimeMillis();
 	    			    
