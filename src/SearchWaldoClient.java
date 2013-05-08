@@ -85,23 +85,20 @@ public class SearchWaldoClient extends JPanel
 	    				logMsg = "Connected to the server.";
 	    				setProgress(setProgressCounter());
 	    				
-	    				//Send the file								
-	    				File myFile = fc.getSelectedFile();
-	    				
-	    				byte [] mybytearray  = new byte [(int)myFile.length()];
-	    				FileInputStream fis = new FileInputStream(myFile);
-	    				BufferedInputStream bis = new BufferedInputStream(fis);
-	    				bis.read(mybytearray,0,mybytearray.length);
-	    				OutputStream os = csSocket.getOutputStream();
-	
-	    				//strat the time count
-	    				long start = System.currentTimeMillis();
-	    				
-	    				logMsg = "Uploading file: " + myFile.getName() + ".";
+	    				logMsg = "Uploading file: " + fc.getSelectedFile().getPath() + ".";
 	    				setProgress(setProgressCounter());
 	    				
-	    				os.write(mybytearray,0,mybytearray.length);
-	    				os.flush();			
+	    				//start the time count
+	    				long start = System.currentTimeMillis();
+	    				
+	    				
+	    				File myFile = fc.getSelectedFile();	    				
+	    				
+	    				
+	    				//Send the file	    
+	    				FileTransfer.sendFile(csSocket, myFile);
+	    				
+	    				//csSocket.close();
 	    				
 	    				logMsg = "File upload successful.";
 	    				setProgress(setProgressCounter());
@@ -110,40 +107,17 @@ public class SearchWaldoClient extends JPanel
 	    				logMsg = "Task Completed 0%.";
 	    				setProgress(setProgressCounter());
 	    				
-	    				//wait to receive the file
-	    				//while(true){}//need to implement this part	    				
 	    				
-	    				//receive the file	    	
-	    				//int filesize=myFile.getName().; // filesize temporary hardcoded
-	    			    byte [] rcvbytearray  = new byte [(int)myFile.length()];
-	    			    InputStream is = csSocket.getInputStream();
-	    			    //create the output file name from the input file name
-	    			    String outFile = myFile.getParentFile() + "\\"  + myFile.getName().substring(0, myFile.getName().indexOf(".")) + "-highlight." +  myFile.getName().substring(myFile.getName().indexOf("."), myFile.getName().length());
-	    			    
-	    			    FileOutputStream fos = new FileOutputStream(outFile);
-	    			    BufferedOutputStream bos = new BufferedOutputStream(fos);
-	    			    
-	    			    int bytesRead;
-	    			    int current = 0;
-	    			    
-	    			    bytesRead = is.read(rcvbytearray,0,rcvbytearray.length);
-	    			    current = bytesRead;
-
-	    			    
-	    			    do {
-	    			       bytesRead =
-	    			          is.read(rcvbytearray, current, (rcvbytearray.length-current));
-	    			       if(bytesRead >= 0) current += bytesRead;
-	    			    } while(bytesRead > -1);
-
-	    			    bos.write(rcvbytearray, 0 , current);
-	    			    bos.flush();
+	    				
+	    				//read line from ther 
+	    				//receive the file	  
+	    				String outFile = fc.getSelectedFile().getParentFile() + "\\"  + fc.getSelectedFile().getName().substring(0, fc.getSelectedFile().getName().indexOf(".")) + "-highlight." +  fc.getSelectedFile().getName().substring(fc.getSelectedFile().getName().indexOf("."), fc.getSelectedFile().getName().length());
+	    				FileTransfer.receiveFile(csSocket, outFile);
+	    					    				
 	    			    long end = System.currentTimeMillis();
 	    			    
 	    			    logMsg = "Total time to process the request: " + (end-start) + ".";
 	    				setProgress(setProgressCounter());
-	    			    	    			    	    			    
-	    			    bos.close();
 	    			    
 	    			    csSocket.close();
 	    			    
