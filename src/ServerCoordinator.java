@@ -24,7 +24,7 @@ public class ServerCoordinator {
 	private static final int NUM_RESULTS = 3;
 	private final static String WALDO_RESULT_IMAGE = "waldo_search_results.jpg";
 	static //Data members
-	String mLocalImgPath;
+	String mLocalImgPath,mLocalImgResPath;
 	String mLocalBasePath;//Base path is $HOME/WaldoFiles/Coordinator
 	int mImgWd, mImgHt, mTmpWd, mTmpHt, mVStride, mHStride,mNumJobItemsRem, 
 		mWorkersAvailable,mCurrentJobIdx;
@@ -33,7 +33,7 @@ public class ServerCoordinator {
 	static Thread mThImageSender, mThScheduler;
 	static ServerCommTX mSCT;
 	static ArrayList<JobItem> mJIList; // List to track status of job-items
-	
+	Boolean mClientJobDone;
 			
 	// List to track status of each worker
 	//Worker status can be 
@@ -59,6 +59,7 @@ public class ServerCoordinator {
 		mNumJobItemsRem = 0;
 		mLocalImgPath = "";
 				
+		mClientJobDone = false;
 		mImgS = new ImageSenderThread();
 		mThImageSender = new Thread(mImgS);
 		mThScheduler = new Thread(new JobScheduler(this));
@@ -190,22 +191,30 @@ public class ServerCoordinator {
 		
 	//Job Done Receive
 	//Called by ServerServerComm processMSG
-	public synchronized void JobDone(int inJobID, int inWID, int inFeatMatched){		
-		//setWorkerStatus to done
-		mWList.set(inWID, "DONE");
+	public synchronized void JobDone(int inJobID, int inWID, int inFeatMatched, Boolean timeout){		
+		if(!timeout){		
+			//update job item
+			mJIList.get(inJobID).mFeatMatched = inFeatMatched;
+			mJIList.get(inJobID).mStatus = "P"; 
 		
-		//update job item
-		mJIList.get(inJobID).mFeatMatched = inFeatMatched;
-		mJIList.get(inJobID).mStatus = "P"; 
+			//Decrement number of mNumJobItemsRem
+			mNumJobItemsRem--;
+		}
 		
-		//Decrement number of mNumJobItemsRem
-		mNumJobItemsRem--;	
+		//After all the jobs are completed, we may receive a few timeout messages from workers
+		//This can happen it may take some time to notify all the workers that the processing 
+		//is done
+		if(mNumJobItemsRem>0){
+			//setWorkerStatus to done
+			mWList.set(inWID, "DONE");
 		
-		//Increment number of workers available
-		mWorkersAvailable++;
+			//Increment number of workers available
+			mWorkersAvailable++;
+		}
 		
 		notify();
 	}
+	
 	
 	//Image receive ack
 	//Called by ServerServerComm processMSG
@@ -216,6 +225,32 @@ public class ServerCoordinator {
 		mWorkersAvailable++;
 		
 		notify();
+	}
+	
+	public synchronized void UnInitWorkers(){
+    	for(int i=0;i<mWList.size() ;i++){
+    		if(mWList.get(i) != null){    			
+    				String msg = "job_uninit#" + Integer.toString(mSC.mMyID);
+    				try {
+    					if(i!=mSC.mMyID){
+    						mSCT.sendMsg(i, msg);
+    					}
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}  
+    				mWList.set(i, "UNINIT");
+    				       		
+    		}
+    	}
+	}
+	
+	public Boolean getClientJobDone(){
+		return mClientJobDone;
+	}
+	
+	public String getResultImgPath(){
+		return mLocalImgResPath;
 	}
 	
 	public synchronized int getNumWorkersAvailable(){
@@ -289,6 +324,10 @@ public class ServerCoordinator {
     			}    				
     		}
     		
+    		//Send uninit message to workers. This will put all the servers back to initialize
+    		//state of non-workers and non-coordinators
+    		mSCoord.UnInitWorkers();
+    		
     		// Load the image and sort the candidates by number of matches
     		MBFImage target = null;
 			try {
@@ -322,6 +361,7 @@ public class ServerCoordinator {
     			rectangle.add(new Pixel(curBest.x + ServerWorker.SUB_IMAGE_WIDTH, curBest.y + ServerWorker.SUB_IMAGE_HEIGHT));
     			target.drawShape(new Polygon(rectangle).calculateRegularBoundingBox(), 3,RGBColour.BLACK);
     			target.drawText(Integer.toString(j), curBest.x - 10, curBest.y - 10, new GeneralFont("Courier", Font.BOLD), 26, RGBColour.BLACK);
+    			j++;
     		}
     		
     		// Save the image locally
@@ -329,10 +369,14 @@ public class ServerCoordinator {
     		BufferedImage resultImage = new BufferedImage(target.getWidth(), target.getHeight(), BufferedImage.TYPE_INT_RGB);
     		resultImage.setRGB(0, 0, target.getWidth(), target.getHeight(), imageBytes, 0, target.getWidth());
     		try {
-				ImageIO.write(resultImage, "jpg", new File(WALDO_RESULT_IMAGE));
+    			mLocalImgResPath = mSCoord.mLocalBasePath+ "/" +WALDO_RESULT_IMAGE;
+				ImageIO.write(resultImage, "jpg", new File(mLocalImgResPath));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+    		
+    		//Signal job done
+    		mSCoord.mClientJobDone = true;
 
         }
 		

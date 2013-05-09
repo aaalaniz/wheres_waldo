@@ -1,6 +1,7 @@
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,11 +55,24 @@ public class ServerClientComm{
                     t.start();
                 }
             }
+                /*
+             if(mSC.mMyID == 0){   
+	               try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+	               mFilePath = "whereswaldo1.jpg";
+	               mSCoord.ProcessJob(mFilePath);
+	            }
+            }*/
             catch (IOException e)
             {
                 System.err.println(e);
                 System.exit(-1);
             }
+            
         }
     }
     
@@ -85,53 +99,18 @@ public class ServerClientComm{
         }
         public void run()
         {
-            try
-            {
+            mFilePath = FileTransfer.receiveFile(mS, mSCoord.mLocalBasePath);
+			mSCoord.ProcessJob(mFilePath);
+			
+			//Spin until job is done
+			while(!mSCoord.getClientJobDone()){
+				
+			}
 
-            	 //MArefin set the file name
-                //mFilePath = "SearchWaldoImage";//ok                
-                
-			    //create the output file name from the input file name
-			    //String inFile = mSCoord.mLocalBasePath + "/" + mFilePath;	    
-			    
-			    mFilePath = FileTransfer.receiveFile(mS, mSCoord.mLocalBasePath);
-            	
-			    
-            	
-            	String requestIn, requestOut;
-
-                while ((requestIn = mInputStream.readLine()) != null)
-                {
-                    //Receive request
-                	// \todo receive image. Will need to break the file down into pieces
-                	//and then write it to file system on the server
-                    threadMessage(requestIn + " request received from hostname " + mS.getInetAddress().getHostName()
-                                  + "(" +  mS.getInetAddress().getHostAddress() + ")");
-                                        
-                    //Process request. 
-                    //\todo Instantiate server coordinator, and do the work
-                    mSCoord.ProcessJob(mFilePath);
-                    requestOut = "Image Received";
-                    
-                    
-                    //Respond
-                    mOutputStream.println(requestOut);
-                    mOutputStream.flush();
-                    threadMessage("hostname " + mS.getInetAddress().getHostName() + "("
-                                  +  mS.getInetAddress().getHostAddress() + ") request processed");
-                    threadMessage("Request In: " + requestIn);
-                    threadMessage("Request Out: " + requestOut);
-                }
-            }
-            catch (SocketException se)
-            {
-                System.err.println(se);
-            }
-            catch (IOException e)
-            {
-                System.err.println(e);
-            }
-
+			String resFname = mSCoord.getResultImgPath();
+			File f=new File(resFname);
+			FileTransfer.sendFile(mS,f);
+			
             System.out.println("TCP Connection Closed with hostname " + mS.getInetAddress().getHostName()
                                + "(" +  mS.getInetAddress().getHostAddress() + ")");
         }

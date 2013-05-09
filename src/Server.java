@@ -166,7 +166,7 @@ class Server{
 	        ServerClientComm scc = new ServerClientComm(sc);
 	        
 	        //ServerCommRX
-	        ServerCommRX scr = new ServerCommRX(sw, sc,UDPSocket);	                           
+	        ServerCommRX scr = new ServerCommRX(sw, sc,UDPSocket,sct);	                           
         
 	}
 	
