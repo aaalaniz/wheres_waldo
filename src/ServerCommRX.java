@@ -12,6 +12,7 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.StringTokenizer;
 
 
@@ -24,16 +25,21 @@ public class ServerCommRX {
 	String mLocalPath;
 	DatagramSocket mUDPSocket;
 	static Thread mThreadRXTCP, mThreadRXUDP;
-    ServerWorker mSW;
+    static ServerWorker mSW;
     ServerCoordinator mSCoord;
+    static public Boolean mIsWorker;
+    static ServerCommTX mSCT;
     
 	//Constructor	
-	public ServerCommRX( ServerWorker inSW,ServerCoordinator inCoord, DatagramSocket inUDPSocket) throws IOException{
+	public ServerCommRX( ServerWorker inSW,ServerCoordinator inCoord, DatagramSocket inUDPSocket, 
+			ServerCommTX inSCT) throws IOException{
 		mSC = ServersConfig.getConfig();
 		mId = mSC.mMyID;		
 		mSW = inSW;
 		mSCoord = inCoord;
 		mUDPSocket = inUDPSocket;
+		mIsWorker = false;
+		mSCT = inSCT;
 	    
 		threadMessage("ServerCommRX created mID: "+ mId);
 		File homeDir = new File(System.getProperty("user.home"));
@@ -88,6 +94,7 @@ public class ServerCommRX {
     	//Messages received as worker
     	if(tag.equals("job_init")){
     		//set server worker object's coordinator ID field
+    		mIsWorker = true;
     		mSW.InitJob(m.srcID);
     	}    	
     	else if(tag.equals("job_start")){    		
@@ -108,6 +115,9 @@ public class ServerCommRX {
     		//call mSW.stopProcessing
     		//\todo add a message queue in ServerWorker
     	}
+    	else if(tag.equals("job_uninit")){
+    		mIsWorker=false;
+    	}
     	
     	//Message received as coordinator
     	else if(tag.equals("job_done")){
@@ -117,7 +127,7 @@ public class ServerCommRX {
             int featMatched = Integer.parseInt(st.nextToken());
             
             int wid = m.getSrcId();
-    		mSCoord.JobDone(jobid, wid, featMatched);
+    		mSCoord.JobDone(jobid, wid, featMatched,false);
     		
     	}
     	else if(tag.equals("image_received_ack")){
@@ -125,7 +135,13 @@ public class ServerCommRX {
     		int wid = m.getSrcId();
     		mSCoord.ImageRcvAck(wid);
     	}
+    	else if(tag.equals("timeout")){
+    		//add to coordinator queue
+    		int wid = m.getSrcId();
+    		mSCoord.JobDone(0, wid, 0,true);
+    	}
     }
+    
     
     //Thread to listen on TCP
     private static class TCPListener implements Runnable
@@ -276,11 +292,25 @@ public class ServerCommRX {
                 {	                		                	
                     //clear out buf each time
                     java.util.Arrays.fill(buf, (byte) 0);
-                 
-                    //Receive packet
-                    threadMessage("UDPListener: Waiting to receive message");
-                    dp = new DatagramPacket(buf, buf.length);
-                    mDatagramSocket.receive(dp);
+                    if(ServerCommRX.mIsWorker){                 
+                    	//Receive packet
+                    	threadMessage("UDPListener: Waiting to receive message");
+                    	dp = new DatagramPacket(buf, buf.length);
+                    	try{
+                    		mDatagramSocket.setSoTimeout(5000);                    	                    	
+                    		mDatagramSocket.receive(dp);
+                    	} catch(SocketTimeoutException e){
+                    		String msg = "timeout#" + " ";
+                    		mSCT.sendMsg(mSW.mcoordID, msg);
+                    	}
+                    	
+                    }
+                    else{
+                    	//Receive packet
+                    	threadMessage("UDPListener: Waiting to receive message");
+                    	dp = new DatagramPacket(buf, buf.length);
+                    	mDatagramSocket.receive(dp);
+                    }
 
                     String messageIn = new String(dp.getData(), dp.getOffset(), dp.getLength());
                     ServerMsg m = mSCR.receiveMsg(messageIn);
