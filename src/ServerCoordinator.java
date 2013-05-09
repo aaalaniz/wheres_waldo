@@ -196,9 +196,10 @@ public class ServerCoordinator {
 			//update job item
 			mJIList.get(inJobID).mFeatMatched = inFeatMatched;
 			mJIList.get(inJobID).mStatus = "P"; 
-		
 			//Decrement number of mNumJobItemsRem
 			mNumJobItemsRem--;
+			
+			
 		}
 		
 		//After all the jobs are completed, we may receive a few timeout messages from workers
@@ -261,6 +262,15 @@ public class ServerCoordinator {
 		return mNumJobItemsRem;		
 	}
 	
+	public synchronized Boolean getAllJobsSent(){
+		if(mCurrentJobIdx == mJIList.size()){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	
 	private static class ImageSender{
 		String mFilePath;
 		
@@ -318,7 +328,7 @@ public class ServerCoordinator {
     	//This keeps on running until there are job items to process.
         public void run()
         {            
-    		while(mSCoord.getNumJobItemsRem() > 0){
+    		while(!mSCoord.getAllJobsSent()){
     			if(mSCoord.getNumWorkersAvailable() > 0){
     				mSCoord.JobStart();
     			}    				
