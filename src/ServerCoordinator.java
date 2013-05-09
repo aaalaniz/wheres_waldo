@@ -353,6 +353,7 @@ public class ServerCoordinator {
     			JobItem result = mJIList.get(i);
     			MatchCandidate curBest = new MatchCandidate(result.x, result.y, result.mFeatMatched);
     			if (overlappingResult(curBest, curCandidates)) continue;
+    			j++;
     			curCandidates.add(curBest);
     			ArrayList<Pixel> rectangle = new ArrayList<Pixel>();
     			rectangle.add(new Pixel(curBest.x, curBest.y));
@@ -361,7 +362,6 @@ public class ServerCoordinator {
     			rectangle.add(new Pixel(curBest.x + ServerWorker.SUB_IMAGE_WIDTH, curBest.y + ServerWorker.SUB_IMAGE_HEIGHT));
     			target.drawShape(new Polygon(rectangle).calculateRegularBoundingBox(), 3,RGBColour.BLACK);
     			target.drawText(Integer.toString(j), curBest.x - 10, curBest.y - 10, new GeneralFont("Courier", Font.BOLD), 26, RGBColour.BLACK);
-    			j++;
     		}
     		
     		// Save the image locally
