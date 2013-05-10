@@ -68,6 +68,14 @@ public class FileTransfer {
 	    	DataOutputStream outToClient = new DataOutputStream(sock.getOutputStream());	    	
 			BufferedReader inFromClient = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			
+			//Added this to resolve possible socket sleep/timeout or whatever casuing 
+			//the the extended delay for send and receive filename
+			//wait for the buffer to have data available
+			while (!inFromClient.ready()){
+				
+			}
+			
+			
 			//receive file name
 			String receiveName = inFromClient.readLine();
 			//Send file name 
