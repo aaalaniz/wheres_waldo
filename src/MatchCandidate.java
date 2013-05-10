@@ -10,7 +10,7 @@ public class MatchCandidate implements Comparable{
 	Point topLeft;
 	Point bottomRight;
 	
-	public MatchCandidate(int matches, int x, int y) {
+	public MatchCandidate(int x, int y, int matches) {
 		this.matches = matches;
 		this.x = x;
 		this.y = y;

@@ -246,8 +246,20 @@ public class ServerCoordinator {
     	}
 	}
 	
-	public Boolean getClientJobDone(){
-		return mClientJobDone;
+	public synchronized void getClientJobDoneP(){
+		while(mClientJobDone == false) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public synchronized void setClientJobDoneV(){
+		mClientJobDone = true;
+		notify();
 	}
 	
 	public String getResultImgPath(){
@@ -364,6 +376,7 @@ public class ServerCoordinator {
     			MatchCandidate curBest = new MatchCandidate(result.x, result.y, result.mFeatMatched);
     			if (overlappingResult(curBest, curCandidates)) continue;
     			j++;
+    			threadMessage(j + ": " + curBest);
     			curCandidates.add(curBest);
     			ArrayList<Pixel> rectangle = new ArrayList<Pixel>();
     			rectangle.add(new Pixel(curBest.x, curBest.y));
@@ -386,7 +399,8 @@ public class ServerCoordinator {
 			}
     		
     		//Signal job done
-    		mSCoord.mClientJobDone = true;
+    		threadMessage("signaling thread waiting to send image");
+    		mSCoord.setClientJobDoneV();
 
         }
 		

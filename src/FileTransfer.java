@@ -22,23 +22,26 @@ public class FileTransfer {
 		
 		
 		try{
-			
 			DataOutputStream outToServer = new DataOutputStream(sock.getOutputStream());
 			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			
 			//send file name
 			String sendName = "File Name: " + myFile.getName();
+			System.out.println("sending file name");
 			outToServer.writeBytes(sendName + '\n');
 			//receive file name
+			System.out.println("reading file name from client");
 			String receiveName = inFromServer.readLine();
 			
 			//send file size			
 			String sendSize = "File Size: " + myFile.length()+ '\n';
+			System.out.println("sending file size");
 			outToServer.writeBytes(sendSize + '\n');
 	    	//receive file size
+			System.out.println("reading file size from client");
 			String receiveSize = inFromServer.readLine();
 			
-			
+			System.out.println("sending file to client");
 			//now send the file			
 			byte [] mybytearray  = new byte [(int)myFile.length()];
 			FileInputStream fis = new FileInputStream(myFile);

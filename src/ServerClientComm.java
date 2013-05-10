@@ -103,11 +103,11 @@ public class ServerClientComm{
 			mSCoord.ProcessJob(mFilePath);
 			
 			//Spin until job is done
-			while(!mSCoord.getClientJobDone()){
-				
-			}
+			mSCoord.getClientJobDoneP();
 
 			String resFname = mSCoord.getResultImgPath();
+			threadMessage("coordinator woke me up and now i'm sending file to client");
+			threadMessage(resFname);
 			File f=new File(resFname);
 			FileTransfer.sendFile(mS,f);
 			
