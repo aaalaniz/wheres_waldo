@@ -109,7 +109,7 @@ public class SearchWaldoClient extends JPanel
 	    					    				 
 	    				//receive the file	  
 	    				String filePath = fc.getSelectedFile().getParentFile().getPath();
-	    				String outFile = FileTransfer.receiveFile(csSocket, filePath);
+	    				String outFile = filePath + "/" + FileTransfer.receiveFile(csSocket, filePath);
 	    						
 	    						//fc.getSelectedFile().getParentFile() + "\\"  + fc.getSelectedFile().getName().substring(0, fc.getSelectedFile().getName().indexOf(".")) + "-highlight." +  fc.getSelectedFile().getName().substring(fc.getSelectedFile().getName().indexOf("."), fc.getSelectedFile().getName().length());
 	    				
