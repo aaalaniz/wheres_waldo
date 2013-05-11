@@ -121,6 +121,9 @@ public class SearchWaldoClient extends JPanel
 	    			    
 	    			    csSocket.close();
 	    			    
+	    			    System.out.println("Done...displaying results");
+	    			   
+	    			    
 	    			    //Display image
 	    			    DisplayImage.displayImgFrame(outFile);
 	    			  

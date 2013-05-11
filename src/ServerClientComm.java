@@ -111,7 +111,7 @@ public class ServerClientComm{
 			File f=new File(resFname);
 			FileTransfer.sendFile(mS,f);
 			
-            System.out.println("TCP Connection Closed with hostname " + mS.getInetAddress().getHostName()
+            System.out.println("ServerClientComm: TCP Connection Closed with hostname " + mS.getInetAddress().getHostName()
                                + "(" +  mS.getInetAddress().getHostAddress() + ")");
         }
 

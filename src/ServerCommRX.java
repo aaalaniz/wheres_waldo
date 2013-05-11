@@ -65,11 +65,13 @@ public class ServerCommRX {
 	
     static void threadMessage(String message)
     {
-        /*String threadName =
+    	/*
+        String threadName =
             Thread.currentThread().getName();
         System.out.format("%s: %s%n",
                           threadName,
-                          message);*/
+                          message);
+                          */
     }
 	
     //Receive Msg
@@ -263,7 +265,7 @@ public class ServerCommRX {
                 System.err.println(e);
             }
 
-            System.out.println("TCP Connection Closed with hostname " + mS.getInetAddress().getHostName()
+            threadMessage("ServerCommRX: TCP Connection Closed with hostname " + mS.getInetAddress().getHostName()
                                + "(" +  mS.getInetAddress().getHostAddress() + ")");
         }
 
