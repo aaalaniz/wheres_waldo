@@ -155,12 +155,12 @@ class Server{
 	        ServerWorker sw = new ServerWorker(sct);
 	        
 	        //ServerImageTemplate
-	        ServerImageTemplate sit = new ServerImageTemplate(cfg.getTmpImgPath());
+	        //ServerImageTemplate sit = new ServerImageTemplate(cfg.getTmpImgPath());
 	        
 	        //Server Coordinator
 	        //This object is always instantiated, but only becomes active on receiving messages
 	        //Also, at a given time either the server will act as a worker or coordinator
-	        ServerCoordinator sc = new ServerCoordinator(sct,sit);
+	        ServerCoordinator sc = new ServerCoordinator(sct,null);
 	        
 	        //Client to/from communication object 
 	        ServerClientComm scc = new ServerClientComm(sc);
