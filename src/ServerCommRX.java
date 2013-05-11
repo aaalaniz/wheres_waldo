@@ -1,4 +1,6 @@
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -210,7 +212,7 @@ public class ServerCommRX {
         }
         public void run()
         {
-            try
+            /*try
             {
             	//Get file name and size
             	//Msg format: srcID filename filesize
@@ -253,9 +255,67 @@ public class ServerCommRX {
         			e.printStackTrace();
         		}
                 
-                mS.close();
+                mS.close();*/
+            	int bytesRead;
+        	    int current = 0;	   
+        	   
+        	    try{
+        	    	
+        	    	DataOutputStream outToClient = new DataOutputStream(mS.getOutputStream());	    	
+        			BufferedReader inFromClient = new BufferedReader(new InputStreamReader(mS.getInputStream()));
+        			
+        			//Added this to resolve possible socket sleep/timeout or whatever casuing 
+        			//the the extended delay for send and receive filename
+        			//wait for the buffer to have data available
+        			while (!inFromClient.ready()){
+        				
+        			}
+        			
+        			
+        			//receive file name
+        			String receiveName = inFromClient.readLine();
+        			//Send file name 
+        			outToClient.writeBytes(receiveName + '\n');
+        			
+        			
+        	    	//receive file size
+        			String receiveSize = inFromClient.readLine();			
+        			//send file size		
+        			outToClient.writeBytes(receiveSize + '\n');
+        			
+        			//parse to get the file name
+        			//File Name: xxxxlkjsf.jpg
+        			String fileName = receiveName.substring(11);
+        			//parse the file size
+        			//File Size: 1234
+        			int fileSize = Integer.parseInt(receiveSize.substring(11));
+        			
+        			// receive file
+        		    byte [] mybytearray  = new byte [fileSize];
+        		    InputStream is = mS.getInputStream();
+        		    FileOutputStream fos = new FileOutputStream(mLocalPath + "/" + fileName);
+        		    BufferedOutputStream bos = new BufferedOutputStream(fos);
+        		    
+        		    bytesRead = is.read(mybytearray,0,mybytearray.length);
+        		    current = bytesRead;
+        			    
+        		    do {
+        		       bytesRead =
+        		          is.read(mybytearray, current, (mybytearray.length-current));
+        		       if(bytesRead >= 0) current += bytesRead;
+        		    } while(bytesRead > 0);
+        	
+        		    bos.write(mybytearray, 0 , current);
+        		    //bos.write(mybytearray, 0 , mybytearray.length);
+        		    bos.flush();
+        		    
+        		    bos.close();
+        		    
+                    //Signal that image was received
+                    mSW.ImageReceived(mLocalPath + "/" + fileName);
+        		    
+        	    }
              
-            }
             catch (SocketException se)
             {
                 System.err.println(se);

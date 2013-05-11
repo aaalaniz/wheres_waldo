@@ -1,7 +1,11 @@
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
@@ -72,16 +76,51 @@ public class ServerCommTX {
     
     //Send File
     public synchronized void sendFile(int inDestID, String inFilePath){
-    	byte[] filebuffer = new byte[65536];
+    	//byte[] filebuffer = new byte[50000];
     	
     	threadMessage("ServerCommTX sending file to destID: " + inDestID + " LocalFilePath: " + inFilePath);
     	    	    	    	
     	//Open socket
-    	Socket s;
+    	Socket s=null;
     	OutputStream os=null;
+    	
 		try {
 			s = new Socket(mSC.getServerAddress(inDestID),mSC.getServerTCPPort(inDestID));
+						
+			DataOutputStream outToServer = new DataOutputStream(s.getOutputStream());
+			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(s.getInputStream()));
+			
+			//send file name
+			File myFile=new File(inFilePath);
+			String sendName = "File Name: " + myFile.getName();
+			System.out.println("sending file name");
+			outToServer.writeBytes(sendName + '\n');
+			//receive file name
+			System.out.println("reading file name from client");
+			String receiveName = inFromServer.readLine();
+			
+			//send file size			
+			String sendSize = "File Size: " + myFile.length()+ '\n';
+			System.out.println("sending file size");
+			outToServer.writeBytes(sendSize + '\n');
+	    	//receive file size
+			System.out.println("reading file size from client");
+			String receiveSize = inFromServer.readLine();
+			
+			System.out.println("sending file to client");
+			//now send the file			
+			byte [] mybytearray  = new byte [(int)myFile.length()];
+			FileInputStream fis = new FileInputStream(myFile);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			bis.read(mybytearray,0,mybytearray.length);
 			os = s.getOutputStream();
+					  
+			os.write(mybytearray,0,mybytearray.length);
+			os.flush();
+			s.close();
+			
+			
+			//Send File
 		} catch (UnknownHostException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
@@ -89,6 +128,11 @@ public class ServerCommTX {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
+    	
+	
+		
+		/*
+    	
     	
     	
     	//Send message with srcID filename filesize
@@ -143,6 +187,12 @@ public class ServerCommTX {
 				e.printStackTrace();
 			}
 		}
+    	try {
+			s.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
     	
     	
     	threadMessage("ServerCommTX file send complete to destID: " + inDestID + " LocalFilePath: " + inFilePath);
