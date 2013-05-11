@@ -1,35 +1,58 @@
-NumServers:2
+NumServers:8
 TemplateImagePath:/home/rahul/Pictures/images.jpg
 Server{
-ServerAddress: 127.0.0.1
+ServerAddress: 192.168.1.113
 ServerName: localhost
 SSTCPPort: 35001
 CSTCPPort: 45001
 SSUDPPort: 55001
 }
 Server{
-ServerAddress: 127.0.0.1
+ServerAddress: 192.168.1.113
 ServerName: localhost
 SSTCPPort: 35002
 CSTCPPort: 45002
 SSUDPPort: 55002
 }
 Server{
-ServerAddress: 127.0.0.1
+ServerAddress: 192.168.1.113
 ServerName: localhost
 SSTCPPort: 35003
 CSTCPPort: 45003
 SSUDPPort: 55003
 }
 Server{
-ServerAddress: 127.0.0.1
+ServerAddress: 192.168.1.113
+ServerName: localhost
 SSTCPPort: 35004
 CSTCPPort: 45004
 SSUDPPort: 55004
 }
 Server{
-ServerAddress: 127.0.0.1
+ServerAddress: 192.168.1.149
+ServerName: localhost
 SSTCPPort: 35005
 CSTCPPort: 45005
 SSUDPPort: 55005
+}
+Server{
+ServerAddress: 192.168.1.149
+ServerName: localhost
+SSTCPPort: 35006
+CSTCPPort: 45006
+SSUDPPort: 55006
+}
+Server{
+ServerAddress: 192.168.1.149
+ServerName: localhost
+SSTCPPort: 35007
+CSTCPPort: 45007
+SSUDPPort: 55007
+}
+Server{
+ServerAddress: 192.168.1.149
+ServerName: localhost
+SSTCPPort: 35008
+CSTCPPort: 45008
+SSUDPPort: 55008
 }

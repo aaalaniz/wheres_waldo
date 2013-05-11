@@ -34,6 +34,8 @@ public class ServerCoordinator {
 	static ServerCommTX mSCT;
 	static ArrayList<JobItem> mJIList; // List to track status of job-items
 	Boolean mClientJobDone;
+	long mJobsStartTime = 0;
+	long mJobsEndTime = 0;
 			
 	// List to track status of each worker
 	//Worker status can be 
@@ -94,6 +96,8 @@ public class ServerCoordinator {
 		mLocalImgPath = mLocalBasePath  + "/" + inFileName;
 		
 		threadMessage("ServerCoordinator Process Job: " + mLocalImgPath);
+		mJobsStartTime = System.currentTimeMillis();
+		System.out.println("ServerCoordinator Process Job: " + mLocalImgPath);
 		
 		//Determine dimension of the image	
 		File file = new File(mLocalImgPath); 
@@ -386,7 +390,9 @@ public class ServerCoordinator {
     			target.drawShape(new Polygon(rectangle).calculateRegularBoundingBox(), 3,RGBColour.BLACK);
     			target.drawText(Integer.toString(j), curBest.x - 10, curBest.y - 10, new GeneralFont("Courier", Font.BOLD), 26, RGBColour.BLACK);
     		}
-    		
+    		mSCoord.mJobsEndTime = System.currentTimeMillis();
+    		long numSeconds = (mSCoord.mJobsEndTime - mSCoord.mJobsStartTime) / 1000;
+    		System.out.println("Image search finished in " + numSeconds + " seconds");
     		// Save the image locally
     		int[] imageBytes = target.toPackedARGBPixels();
     		BufferedImage resultImage = new BufferedImage(target.getWidth(), target.getHeight(), BufferedImage.TYPE_INT_RGB);
